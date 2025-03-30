@@ -1,0 +1,9 @@
+{
+  "cameraSpeed" : 1,
+  "cameraYOffset" : 60,
+  "cameraFOV" : 90,
+  "cameraClippingPlaneMin" : 1,
+  "cameraClippingPlaneMax" : 100
+
+
+}

@@ -1,0 +1,18 @@
+
+{
+  "up": "ArrowUp",
+  "down": "ArrowDown",
+  "left": "ArrowLeft",
+  "right": "ArrowRight",
+
+
+
+  "altMovement": "Shift",
+  "action1": "z",
+  "action2": "x",
+  "action3": "c",
+  "pause": "Escape"
+
+ 
+  
+}
