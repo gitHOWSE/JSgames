@@ -23,6 +23,7 @@ controls.enableZoom = false;
 controls.enablePan = false;
 controls.enableRotate = false;
 
+//JAMES: Function to lock onto an object.
 export function followObject(object, camera) {
   if (!camera) {
     camera = this.camera;
@@ -38,6 +39,7 @@ export function followObject(object, camera) {
   update();
 }
 
+//JAMES: Function to move the camera from one spot to another smoothly.
 export function transportCamera(
   target,
   camera,
