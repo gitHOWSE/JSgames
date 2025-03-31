@@ -13,13 +13,22 @@ class CameraManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
-    //JAMES: Create a perspective camera.
+    //JAMES: Create a perspective camera using config values.
     this.camera = new THREE.PerspectiveCamera(
-      75,
+      config.cameraFOV || 75,
       window.innerWidth / window.innerHeight,
-      0.1,
-      1000,
+      config.cameraClippingPlaneMin || 0.1,
+      config.cameraClippingPlaneMax || 1000,
     );
+
+    //JAMES: Use cameraYOffset from config for positioning.
+    //JAMES: Position the camera at (0, cameraYOffset, cameraYOffset) so that the xz plane is the ground.
+    this.camera.position.set(0, config.cameraYOffset, config.cameraYOffset);
+    //JAMES: Make the camera look at the origin (ground level).
+    this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    //JAMES: Add the camera to the scene.
+    this.scene.add(this.camera);
 
     //JAMES: Disable manual controls.
     this.orbitControls = new OrbitControls(
@@ -33,10 +42,12 @@ class CameraManager {
 
   //JAMES: Function to lock onto an object.
   followObject(object) {
+    //JAMES: Optionally, keep a fixed offset on the y-axis when following.
+    const offsetY = config.cameraYOffset || 60;
     this.camera.position.set(
       object.position.x,
-      object.position.y,
-      object.position.z,
+      object.position.y + offsetY,
+      object.position.z + offsetY,
     );
     this.camera.lookAt(object.position);
   }
@@ -45,6 +56,7 @@ class CameraManager {
   transportCamera(target, cameraSpeedOverride, funcOnComplete) {
     const speed = cameraSpeedOverride || config.cameraSpeed;
     const startingPos = this.camera.position.clone();
+    //JAMES: Keep the current y position when moving.
     const targetPos = new THREE.Vector3(target.x, startingPos.y, target.z);
     let dist = startingPos.distanceTo(targetPos);
     let expectedDuration = dist / speed;

@@ -1,8 +1,8 @@
 // Util/Gui.js
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
-import { scene } from "./Camera.js"; // Attach panels to the scene.
-
+import { cameraManager } from "./Camera.js"; // Attach panels to the scene.
+let scene = cameraManager.scene;
 export class GuiManager {
   constructor(camera) {
     this.camera = camera;
@@ -76,7 +76,9 @@ export class GuiManager {
     panel.position.set(0, 0, -distance);
     panel.visible = false;
     // Instead of attaching to the camera, attach the panel to the scene.
-    scene.add(panel);
+
+    this.camera.add(panel);
+
     return panel;
   }
 
@@ -141,259 +143,13 @@ export class GuiManager {
       },
     });
 
-    // ----- Settings Button -----
-    const settingsButton = new ThreeMeshUI.Block({
-      width: 0.8,
-      height: 0.2,
-      margin: 0.02,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: new THREE.Color(0x1f8b4c),
-      borderRadius: 0.05,
-    });
-    const settingsText = new ThreeMeshUI.Text({
-      content: "Settings",
-      fontSize: 0.08,
-      textColor: new THREE.Color(0xffffff),
-    });
-    settingsButton.add(settingsText);
-    container.add(settingsButton);
-
-    // Setup button states for Settings.
-    settingsButton.setupState({
-      state: "idle",
-      attributes: { offset: 0.02, backgroundColor: new THREE.Color(0x1f8b4c) },
-    });
-    settingsButton.setupState({
-      state: "hovered",
-      onSet: () =>
-        settingsButton.set({ backgroundColor: new THREE.Color(0x3fa65e) }),
-    });
-    settingsButton.setupState({
-      state: "active",
-      onSet: () => {
-        settingsButton.set({ backgroundColor: new THREE.Color(0x75c882) });
-        // Store the current panel to restore later if needed.
-        if (this.activePanel && this.activePanel !== this.guiPanels.settings) {
-          this.previousPanel = this.activePanel;
-        }
-        this.showPanel("settings");
-      },
-    });
-
     // Save the start panel information.
     this.guiPanels.start = {
       panel,
-      interactables: [startButton, settingsButton],
+      interactables: [startButton],
       onStart: null, // Callback for starting the game.
     };
   }
-
-  // ----------------------------
-  // Pause Panel
-  // ----------------------------
-  createPausePanel() {
-    const panel = this._createPanel({
-      fullScreen: true,
-      distance: 2,
-      backgroundColor: 0x222222,
-    });
-
-    const container = new ThreeMeshUI.Block({
-      width: panel.width * 0.9,
-      height: panel.height * 0.7,
-      flexDirection: "column",
-      justifyContent: "space-around",
-      alignItems: "center",
-      backgroundOpacity: 0,
-    });
-    panel.add(container);
-
-    // Create the "Resume" button.
-    const resumeButton = new ThreeMeshUI.Block({
-      width: 0.8,
-      height: 0.2,
-      margin: 0.02,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: new THREE.Color(0x1f8b4c),
-      borderRadius: 0.05,
-    });
-    const resumeText = new ThreeMeshUI.Text({
-      content: "Resume",
-      fontSize: 0.08,
-      textColor: new THREE.Color(0xffffff),
-    });
-    resumeButton.add(resumeText);
-    container.add(resumeButton);
-    resumeButton.setupState({
-      state: "idle",
-      attributes: { offset: 0.02, backgroundColor: new THREE.Color(0x1f8b4c) },
-    });
-    resumeButton.setupState({
-      state: "hovered",
-      onSet: () =>
-        resumeButton.set({ backgroundColor: new THREE.Color(0x3fa65e) }),
-    });
-    resumeButton.setupState({
-      state: "active",
-      onSet: () => {
-        resumeButton.set({ backgroundColor: new THREE.Color(0x75c882) });
-        this.hidePanel("pause");
-        if (this.guiPanels.pause && this.guiPanels.pause.onResume) {
-          this.guiPanels.pause.onResume();
-        }
-      },
-    });
-
-    // Create the "Settings" button.
-    const settingsButton = new ThreeMeshUI.Block({
-      width: 0.8,
-      height: 0.2,
-      margin: 0.02,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: new THREE.Color(0x1f8b4c),
-      borderRadius: 0.05,
-    });
-    const settingsText = new ThreeMeshUI.Text({
-      content: "Settings",
-      fontSize: 0.08,
-      textColor: new THREE.Color(0xffffff),
-    });
-    settingsButton.add(settingsText);
-    container.add(settingsButton);
-    settingsButton.setupState({
-      state: "idle",
-      attributes: { offset: 0.02, backgroundColor: new THREE.Color(0x1f8b4c) },
-    });
-    settingsButton.setupState({
-      state: "hovered",
-      onSet: () =>
-        settingsButton.set({ backgroundColor: new THREE.Color(0x3fa65e) }),
-    });
-    settingsButton.setupState({
-      state: "active",
-      onSet: () => {
-        settingsButton.set({ backgroundColor: new THREE.Color(0x75c882) });
-        if (this.activePanel && this.activePanel !== this.guiPanels.settings) {
-          this.previousPanel = this.activePanel;
-        }
-        this.showPanel("settings");
-      },
-    });
-
-    this.guiPanels.pause = {
-      panel,
-      interactables: [resumeButton, settingsButton],
-      onResume: null, // Callback for resuming the game.
-    };
-  }
-
-  // ----------------------------
-  // Settings Panel
-  // ----------------------------
-  createSettingsPanel() {
-    // Create a full-screen panel with a solid background.
-    const panel = this._createPanel({
-      fullScreen: true,
-      distance: 1.8,
-      backgroundColor: 0x000000,
-    });
-
-    // Create a title text.
-    const title = new ThreeMeshUI.Text({
-      content: "Settings - Key Bindings",
-      fontSize: 0.08,
-      textColor: new THREE.Color(0xffffff),
-    });
-    panel.add(title);
-
-    // Create a vertical container for the key binding buttons.
-    const buttonContainer = new ThreeMeshUI.Block({
-      width: panel.width * 0.9,
-      height: panel.height * 0.7,
-      flexDirection: "column",
-      justifyContent: "space-around",
-      alignItems: "center",
-      backgroundColor: new THREE.Color(0x000000),
-      backgroundOpacity: 1,
-      padding: 0.02,
-    });
-    panel.add(buttonContainer);
-
-    const keyButtons = {};
-    const interactables = [];
-
-    // Create a button for each control binding.
-    for (const control in this.controlBindings) {
-      const keyButton = new ThreeMeshUI.Block({
-        width: 0.4,
-        height: 0.1,
-        margin: 0.01,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: new THREE.Color(0x1f8b4c),
-        borderRadius: 0.03,
-      });
-      const keyText = new ThreeMeshUI.Text({
-        content: this.controlBindings[control],
-        fontSize: 0.06,
-        textColor: new THREE.Color(0xffffff),
-      });
-      keyButton.add(keyText);
-      buttonContainer.add(keyButton);
-
-      // Set onClick handler to allow key reassignment.
-      keyButton.userData.onClick = () => {
-        this.waitingForKey = control;
-        keyText.set({ content: "Press Key" });
-      };
-
-      keyButtons[control] = keyText;
-      interactables.push(keyButton);
-    }
-
-    // Create an Exit button for the settings panel.
-    const exitButton = new ThreeMeshUI.Block({
-      width: 0.4,
-      height: 0.12,
-      margin: 0.02,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: new THREE.Color(0x1f8b4c),
-      borderRadius: 0.03,
-    });
-    const exitText = new ThreeMeshUI.Text({
-      content: "Exit",
-      fontSize: 0.06,
-      textColor: new THREE.Color(0x8a2be2),
-    });
-    exitButton.add(exitText);
-    panel.add(exitButton);
-    exitButton.position.set(-panel.width / 2 + 0.3, -panel.height / 2 + 0.1, 0);
-    exitButton.setupState({
-      state: "idle",
-      attributes: { offset: 0.02, backgroundColor: new THREE.Color(0x1f8b4c) },
-    });
-    exitButton.setupState({
-      state: "hovered",
-      onSet: () =>
-        exitButton.set({ backgroundColor: new THREE.Color(0x3fa65e) }),
-    });
-    exitButton.userData.onClick = () => {
-      this.saveControls();
-      this.hidePanel("settings", true);
-    };
-    interactables.push(exitButton);
-
-    this.guiPanels.settings = {
-      panel,
-      interactables,
-      keyButtons,
-    };
-  }
-
   // ----------------------------
   // Panel Controls
   // ----------------------------

@@ -1,0 +1,40 @@
+{
+  "battery": {
+    "width": 0.5,
+    "height": 0.2,
+    "position": {
+      "x": -0.8,
+      "y": 0.4,
+      "z": -1
+    }
+  },
+  "ram": {
+    "width": 1,
+    "height": 0.3,
+    "position": {
+      "x": 0.8,
+      "y": 0.4,
+      "z": -1
+    }
+  },
+  "bottomLeft": {
+    "keyWidth": 0.3,
+    "keyHeight": 0.3,
+    "spacing": 0.05,
+    "position": {
+      "x": -0.8,
+      "y": -0.4,
+      "z": -1
+    }
+  },
+  "bottomRight": {
+    "keyWidth": 0.3,
+    "keyHeight": 0.3,
+    "spacing": 0.05,
+    "position": {
+      "x": 0.8,
+      "y": -0.4,
+      "z": -1
+    }
+  }
+}
