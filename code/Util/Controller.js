@@ -1,10 +1,11 @@
-export class Controller {
+class Controller {
   constructor() {
     this.controls = {};
     this.loadControls();
     this.activeKeys = {};
   }
 
+  //JAMES: Load the controls from json.
   async loadControls() {
     try {
       const response = await fetch("/json/controls.json");
@@ -19,6 +20,7 @@ export class Controller {
     }
   }
 
+  //JAMES: When a key is pushed down add it to active keys.
   handleKeyDown(event) {
     const pressedKey = event.key;
     this.activeKeys[pressedKey.toLowerCase()] = true;
@@ -30,6 +32,7 @@ export class Controller {
     }
   }
 
+  //JAMES: When a key is not pressed anymore, remove it from active keys.
   handleKeyUp(event) {
     const releasedKey = event.key;
     delete this.activeKeys[releasedKey.toLowerCase()];
@@ -41,8 +44,18 @@ export class Controller {
     }
   }
 
+  //JAMES: Gracefully listens for when something happens to a key.
   listen() {
     window.addEventListener("keydown", this.handleKeyDown.bind(this));
     window.addEventListener("keyup", this.handleKeyUp.bind(this));
   }
+
+  //JAMES: Adds ability to check if a control varname is active.
+  isControlActive(controlName) {
+    const key = this.controls[controlName];
+    if (!key) return false;
+    return !!this.activeKeys[key.toLowerCase()];
+  }
 }
+
+export const controller = new Controller();
