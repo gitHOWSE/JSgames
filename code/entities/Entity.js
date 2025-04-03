@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import Movement from "Movement.js";
-import Item from "Items.js";
+import {Movement} from "./Movement.js";
+import {Item} from "./Items.js";
 
 export class Entity
 {
@@ -18,7 +18,7 @@ export class Entity
 	// WARNING: DO NOT CREATE ENTITIES THIS WAY; USE ENTITYMANAGER!!!
 	constructor(tag, max_health, max_charge, movement, item)
 	{
-		this.id = nextId;
+		this.id = Entity.nextId;
 		Entity.nextId++;
 		this.is_player = false;
 		this.tag = tag;
@@ -43,3 +43,5 @@ export class Entity
 	heal(toHeal) 			{ this.health = Math.min(this.max_health, this.health + toHeal); }
 	damage(toDamage) 		{ this.health -= toDamage; }
 }
+
+//nextid seems to be a problem
