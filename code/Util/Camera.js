@@ -13,6 +13,10 @@ class CameraManager {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
+    //JAMES: Add an AmbientLight to the scene for overall illumination.
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+    this.scene.add(ambientLight);
+
     //JAMES: Create a perspective camera using config values.
     this.camera = new THREE.PerspectiveCamera(
       config.cameraFOV || 75,
@@ -22,8 +26,8 @@ class CameraManager {
     );
 
     //JAMES: Use cameraYOffset from config for positioning.
-    //JAMES: Position the camera at (0, cameraYOffset, cameraYOffset) so that the xz plane is the ground.
-    this.camera.position.set(0, config.cameraYOffset, config.cameraYOffset);
+    //JAMES: Position the camera at (0, cameraYOffset, 0) so that the xz plane is the ground.
+    this.camera.position.set(0, config.cameraYOffset, 0);
     //JAMES: Make the camera look at the origin (ground level).
     this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -47,7 +51,7 @@ class CameraManager {
     this.camera.position.set(
       object.position.x,
       object.position.y + offsetY,
-      object.position.z + offsetY,
+      object.position.z,
     );
     this.camera.lookAt(object.position);
   }

@@ -1,2 +1,10 @@
+//For hud icon.
 https://www.pngwing.com/en/free-png-xcfil
 
+//For coding hud and gui. Hud and gui partially ai generated.
+https://github.com/felixmariotto/three-mesh-ui
+
+//For stats and debugging
+https://github.com/mrdoob/stats.js
+
+//Models are credit to James Howse. With ai generated help.
