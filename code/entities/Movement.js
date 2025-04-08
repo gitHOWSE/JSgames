@@ -6,7 +6,7 @@ export class Movement {
   topSpeed = 10;
   maxForce = 10;
 
-  //JAMES: Variables for linear movement.
+  // Variables for linear movement.
   pos = new THREE.Vector3();
   prevPos = new THREE.Vector3();
   velocity = new THREE.Vector3();
@@ -18,7 +18,10 @@ export class Movement {
   //JAMES: Base turning acceleration factor (set per entity).
   turningAccelerationFactor = 1.0;
   //JAMES: Constant to damp turning effectiveness at high speeds.
-  turningSpeedDampening = 0.1;
+  turningSpeedDampening = 1.0;
+
+  //JAMES: Flag to indicate whether turning input is active.
+  isTurning = false;
 
   constructor(mode, topSpeed, maxForce) {
     this.mode = mode;
@@ -30,6 +33,7 @@ export class Movement {
     this.acceleration = new THREE.Vector3();
     this.angularVelocity = 0;
     this.angularAcceleration = 0;
+    this.isTurning = false;
   }
 
   //JAMES: Update input-based acceleration for player-controlled entity.
@@ -47,27 +51,33 @@ export class Movement {
       );
     }
 
-    //JAMES: Compute effective turning acceleration that decreases with speed.
+    //JAMES: Compute current speed.
     const speed = this.velocity.length();
+
+    //JAMES: Compute effective turning acceleration that decreases with speed.
     const effectiveTurningAcceleration =
       this.turningAccelerationFactor / (1 + this.turningSpeedDampening * speed);
+
     if (controller.isControlActive("left")) {
-      this.angularAcceleration = -effectiveTurningAcceleration;
-    } else if (controller.isControlActive("right")) {
       this.angularAcceleration = effectiveTurningAcceleration;
+      this.isTurning = true;
+    } else if (controller.isControlActive("right")) {
+      this.angularAcceleration = -effectiveTurningAcceleration;
+      this.isTurning = true;
     } else {
       this.angularAcceleration = 0;
+      this.isTurning = false;
     }
   }
 
   //JAMES: Update angular velocity and rotate the velocity vector.
   updateAngular(delta) {
-    // Integrate angular acceleration.
+    //JAMES: Integrate angular acceleration.
     this.angularVelocity += this.angularAcceleration * delta;
-    // Apply damping.
+    //JAMES: Apply damping to angular velocity.
     const angularDamping = 0.9;
     this.angularVelocity *= angularDamping;
-    // Rotate the current velocity vector by the angular change.
+    //JAMES: Rotate the current velocity vector around the Y-axis by the angular change.
     this.velocity.applyAxisAngle(
       new THREE.Vector3(0, 1, 0),
       this.angularVelocity * delta,
@@ -75,10 +85,33 @@ export class Movement {
   }
 
   //JAMES: Update linear velocity based on current acceleration.
-  updateLinear(delta) {
+  updateLinear(delta, forwardDirection = null) {
+    //JAMES: Add acceleration contribution.
     this.velocity.add(this.acceleration.clone().multiplyScalar(delta));
+    //JAMES: Clamp velocity to the top speed.
     if (this.velocity.length() > this.topSpeed) {
       this.velocity.setLength(this.topSpeed);
+    }
+    //JAMES: If a forward direction is provided, no turning input is active,
+    //       and velocity exists, reorient the velocity.
+    if (forwardDirection && !this.isTurning && this.velocity.length() > 0) {
+      const currentSpeed = this.velocity.length();
+      const dot = this.velocity.dot(forwardDirection);
+      //JAMES: If the dot product is positive, we're moving forward.
+      if (dot >= 0) {
+        this.velocity.copy(
+          forwardDirection.clone().normalize().multiplyScalar(currentSpeed),
+        );
+      } else {
+        //JAMES: If the dot product is negative, we're moving in reverse.
+        this.velocity.copy(
+          forwardDirection
+            .clone()
+            .negate()
+            .normalize()
+            .multiplyScalar(currentSpeed),
+        );
+      }
     }
     return this.velocity;
   }

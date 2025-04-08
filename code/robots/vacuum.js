@@ -19,11 +19,10 @@ const resources = new Resources(resourceFiles);
 class Vacuum extends Entity {
   constructor(position, model) {
     const movement = new Movement("wheels", 10, 10);
-    movement.setTurningAccelerationFactor(10.0);
+    movement.setTurningAccelerationFactor(100.0);
     const item = new Item();
     super("vacuum", 100, 60, movement, item);
 
-    // Mark this vacuum as player-controlled if desired.
     this.is_player = true;
 
     if (position) {
@@ -32,7 +31,6 @@ class Vacuum extends Entity {
       this.position = new THREE.Vector3(0, 0, 0);
     }
 
-    // Use the loaded model as the vacuum's mesh.
     this.mesh = model.clone();
     this.mesh.traverse((child) => {
       if (child.isMesh) {
@@ -41,8 +39,7 @@ class Vacuum extends Entity {
       }
     });
     this.mesh.position.copy(this.position);
-
-    // Enable headlights.
+    this.enableBulbLight();
     this.enableHeadlights();
   }
 }
