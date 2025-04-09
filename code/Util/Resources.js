@@ -1,6 +1,7 @@
 // Util/Resources.js
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
+//JAMES: Ai was used for this, because it would be painful otherwise. (Apart from your code (I assume that is okay)).
 /**
  * The purpose of this class is to load
  * resources into your three.js project.

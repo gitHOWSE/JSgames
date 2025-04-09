@@ -8,7 +8,6 @@ import Floor from "../tilesetc/floor.js";
 import { Resources } from "../Util/Resources.js"; //JAMES: Import Resources for cloning models
 
 let vacuum = null;
-const floorGrid = []; //JAMES: Store floor instances.
 const testMeshes = []; //JAMES: Store all cloned test meshes.
 const clock = new THREE.Clock();
 
@@ -16,19 +15,46 @@ export async function startLevelOne() {
   try {
     //JAMES: Create and await the vacuum model.
     vacuum = await createVacuum(new THREE.Vector3(0, 0, 0));
-    //JAMES: Mark vacuum as player-controlled.
-    vacuum.makePlayer();
-    //JAMES: Add the vacuum's mesh to the scene.
-    cameraManager.scene.add(vacuum.mesh);
+    vacuum.makePlayer(); //JAMES: Mark vacuum as player.
+    cameraManager.scene.add(vacuum.mesh); //JAMES: Add vacuum to scene.
 
-    //JAMES: Create one Floor instance to determine its dimensions.
+    //JAMES: Create one Floor instance to ensure the floor model is loaded.
     const tempFloor = new Floor({ scene: cameraManager.scene });
-    //JAMES: Wait until the floor model has loaded.
-    await waitForModelLoad(tempFloor);
+    await waitForModelLoad(tempFloor); //JAMES: Wait until the floor is ready.
+    cameraManager.scene.remove(tempFloor.model);
+
+    //JAMES: List of static low‑poly model keys from the manifest.
+    const staticKeys = [
+      "plasmaLow",
+      "bombLow",
+      "blueFridgeLow",
+      "mysteryBoxLow",
+      "oldSchoolTowerLow",
+      "snackMachineLow",
+      "storageCabinetLow",
+      "vintageOscilloscopeLow",
+      "accessTerminalLow",
+      "espressoDreamerLow",
+      "ecoBotWheelerLow",
+      "forkliftBotLow",
+      "redAerialExplorerLow",
+      "roboticControlLow",
+      "roboticVacuumCharmLow",
+      "steampunkSentinelLow",
+    ];
+
+    //JAMES: Clone each static model and lay them out in a line, 10 units apart.
+    for (let i = 0; i < staticKeys.length; i++) {
+      const key = staticKeys[i];
+      const meshClone = await Resources.cloneFromManifest(key);
+      meshClone.position.set(i * 10, 0, 0);
+      cameraManager.scene.add(meshClone);
+      testMeshes.push(meshClone);
+    }
+
     //JAMES: Start the animation loop.
     animate();
   } catch (error) {
-    //JAMES: Log any errors during level initialization.
     console.error("Error in startLevelOne:", error);
   }
 }
@@ -36,15 +62,13 @@ export async function startLevelOne() {
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
-  //JAMES: Update the vacuum if it has an update method.
   if (vacuum && typeof vacuum.update === "function") {
     vacuum.update(delta);
   }
-  //JAMES: Render the scene using the active camera.
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
 }
 
-//JAMES: Helper to wait until the model (on a Floor instance) is loaded.
+//JAMES: Helper to wait until the floor model has loaded.
 function waitForModelLoad(floor) {
   return new Promise((resolve) => {
     const check = () => {
