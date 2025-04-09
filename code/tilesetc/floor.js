@@ -1,8 +1,8 @@
 // JSgames/code/tilesetc/floor.js
 
-//JAMES: Import Three.js and GLTFLoader for model loading.
+//JAMES: Import Three.js and the singleton assetLoader for model loading.
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { assetLoader } from "../Util/AdvancedAssetLoader.js";
 
 //JAMES: Import the base Entity class to extend its functionality.
 import { Entity } from "../entities/Entity.js";
@@ -20,38 +20,25 @@ class Floor extends Entity {
       params.scene.add(this.model);
     }
 
-    //JAMES: Define the path to the floor model (adjusted for our folder structure).
-    const modelPath = "../models/tilesetc/Tile.glb";
+    //JAMES: Clone the already-loaded tile mesh from the singleton assetLoader.
+    try {
+      const tileScene = assetLoader.clone("tile");
+      this.model.add(tileScene);
 
-    //JAMES: Instantiate the GLTFLoader to load the glTF model.
-    const loader = new GLTFLoader();
+      //JAMES: Adjust the scale and position.
+      const scaleXZ = 6;
+      const scaleY = 5;
+      this.model.scale.set(scaleXZ, scaleY, scaleXZ);
 
-    //JAMES: Load the model from the specified path.
-    loader.load(
-      modelPath,
-      (gltf) => {
-        //JAMES: On successful load, add the (model) to the group.
-        this.model.add(gltf.scene);
-
-        //JAMES: Adjust the scale and position.
-        const scaleXZ = 6;
-        const scaleY = 5;
-        this.model.scale.set(scaleXZ, scaleY, scaleXZ);
-        const bbox = new THREE.Box3().setFromObject(this.model);
-        this.model.position.set(0, -bbox.max.y - 0.45, 0);
-      },
-      (xhr) => {
-        //JAMES: Log progress to the console.
-        console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
-      },
-      (error) => {
-        //JAMES: Log any errors that occur during model loading.
-        console.error(
-          "An error occurred while loading the floor model:",
-          error,
-        );
-      },
-    );
+      //JAMES: Compute bounding box to align the tile with the ground.
+      const bbox = new THREE.Box3().setFromObject(this.model);
+      this.model.position.set(0, -bbox.max.y, 0);
+    } catch (err) {
+      console.error(
+        "Floor tile not loaded yet. Ensure assetLoader.loadAll() is called before creating Floor.",
+        err,
+      );
+    }
   }
 
   //JAMES: Override update for static entities; no per-frame updates are necessary.
@@ -74,6 +61,7 @@ class Floor extends Entity {
     this.model.rotation.z += Math.PI / 2;
   }
 
+  //JAMES: Returns the world-space dimensions of the floor model.
   getDimensions() {
     const bbox = new THREE.Box3().setFromObject(this.model);
     const size = new THREE.Vector3();

@@ -16,7 +16,7 @@ export class Movement {
   angularVelocity = 0;
   angularAcceleration = 0;
   //JAMES: Base turning acceleration factor (set per entity).
-  turningAccelerationFactor = 1.0;
+  turningAccelerationFactor = 18.0;
   //JAMES: Constant to damp turning effectiveness at high speeds.
   turningSpeedDampening = 1.0;
 

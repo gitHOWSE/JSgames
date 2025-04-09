@@ -1,76 +1,74 @@
 // levels/levelone.js
+
 "use strict";
 
+//JAMES: Import Three.js core and our camera manager.
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraManager } from "../Util/Camera.js";
+
+//JAMES: Import our vacuum factory and floor entity.
 import { createVacuum } from "../robots/vacuum.js";
 import Floor from "../tilesetc/floor.js";
 
+//JAMES: Import our new animation helper.
+import { playAnimation } from "../Util/AnimationUtils.js";
+
+//JAMES: We'll keep track of the player and all mixers here.
 let vacuum = null;
 const mixers = [];
-const clock  = new THREE.Clock();
+const clock = new THREE.Clock();
 
-// Path to your single GLB
-const GLB_URL = "/models/lowpoly/animations/forklift/Animation_Sword_Judgment_withSkin.glb";
+//JAMES: Path to the forklift sword‑judgment animation.
+const GLB_URL =
+  "/models/lowpoly/animations/forklift/Animation_Sword_Judgment_withSkin.glb";
 
 export async function startLevelOne() {
   try {
-    // 1) Set up vacuum & floor as before
+    //JAMES: 1) Spawn the vacuum player, set up camera follow, and add to scene.
     vacuum = await createVacuum(new THREE.Vector3(0, 0, 0));
     vacuum.makePlayer();
-    cameraManager.scene.add(vacuum.mesh);
 
+    cameraManager.scene.add(vacuum.model);
+
+    //JAMES: 2) Instantiate a Floor entity (we only needed it to load the tile)
     const tempFloor = new Floor({ scene: cameraManager.scene });
     await waitForModelLoad(tempFloor);
     cameraManager.scene.remove(tempFloor.model);
 
-    // 2) Load the animated GLB via GLTFLoader
-    const loader = new GLTFLoader();
-    loader.load(
-      GLB_URL,
-      (gltf) => {
-        // Add the model to the scene
-        const model = gltf.scene;
-        model.position.set(0, 0, -5);
-        cameraManager.scene.add(model);
+    //JAMES: 3) Play the forklift animation via our helper.
+    playAnimation({
+      url: GLB_URL,
+      scene: cameraManager.scene,
+      mixers,
+      position: new THREE.Vector3(0, 0, -5),
+      scale: new THREE.Vector3(6, 6, 6), // adjust size if needed
+      playbackRate: 1, // 1 = normal speed
+      loop: THREE.LoopRepeat,
+      loopCount: Infinity,
+    });
 
-
-
-        // 4) Create a mixer and play the first clip
-        const mixer = new THREE.AnimationMixer(model);
-        const clip  = gltf.animations[0];
-        const action = mixer.clipAction(clip);
-        action.play();
-
-        mixers.push(mixer);
-      },
-      (xhr) => {
-        console.log(`Loading GLB: ${(xhr.loaded / xhr.total * 100).toFixed(1)}%`);
-      },
-      (err) => {
-        console.error("Error loading GLB:", err);
-      }
-    );
-
-    // 5) Kick off the render loop
+    //JAMES: 4) Start the render + update loop.
     animate();
   } catch (err) {
     console.error("Error in startLevelOne:", err);
   }
 }
 
+//JAMES: Per‑frame render/update loop.
 function animate() {
   requestAnimationFrame(animate);
 
   const delta = clock.getDelta();
   if (vacuum && vacuum.update) vacuum.update(delta);
+
+  //JAMES: Advance all animation mixers.
   mixers.forEach((m) => m.update(delta));
 
+  //JAMES: Render the scene from our main camera.
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
 }
 
-// Helper to wait until the floor model is in the scene
+//JAMES: Helper to wait until the Floor model has at least one child.
 function waitForModelLoad(floor) {
   return new Promise((resolve) => {
     const check = () => {
