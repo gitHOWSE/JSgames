@@ -61,7 +61,7 @@ function animate() {
   requestAnimationFrame(animate);
 
   const delta = clock.getDelta();
-  entityManager.entities.forEach((ent) => ent.update(delta));
+  entityManager.update();
 
   //JAMES: Update ThreeMeshUI (this includes the loading screen) each frame.
   ThreeMeshUI.update();

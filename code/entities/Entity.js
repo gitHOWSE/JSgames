@@ -2,7 +2,7 @@
 import * as THREE from "three";
 import { Movement } from "./Movement.js";
 import { Item } from "./Items.js";
-
+import checkHacks from "../robots/hax.js";
 export class Entity {
   static nextId = 0;
 
@@ -31,7 +31,7 @@ export class Entity {
       params.scene.add(this.model);
     }
 
-    //JAMES: If a mesh was provided, parent it under our model
+    //JAMES: If a mesh was provided, parent it under  model
     this.mesh = params.mesh || null;
     if (this.mesh) {
       this.model.add(this.mesh);
@@ -53,6 +53,8 @@ export class Entity {
 
     //JAMES: Player‑controlled flag
     this.is_player = false;
+    this.is_hackable = false;
+    this.is_robot = false;
   }
 
   //JAMES: Returns the world forward direction vector.
@@ -150,12 +152,14 @@ export class Entity {
       window.cameraManager.followObject(this);
     }
 
+    checkHacks(this);
     //JAMES: Bounding box
     this.updateBoundingBox();
   }
 
   //JAMES: Mark/unmark as player
   makePlayer() {
+    this.is_hackable = false;
     this.is_player = true;
   }
   unMakePlayer() {
@@ -172,6 +176,9 @@ export class Entity {
   isPlayer() {
     return this.is_player;
   }
+  isRobot() {
+    return this.is_robot;
+  }
   getMaxHealth() {
     return this.max_health;
   }
@@ -187,6 +194,9 @@ export class Entity {
   getPos() {
     return this.position;
   }
+  getHackable() {
+    return this.is_hackable;
+  }
   setHealth(h) {
     this.health = Math.min(this.max_health, h);
   }
@@ -195,5 +205,11 @@ export class Entity {
   }
   damage(d) {
     this.health -= d;
+  }
+  setHackable(t = true) {
+    this.is_hackable = t || true;
+  }
+  setRobot() {
+    this.is_robot = true;
   }
 }

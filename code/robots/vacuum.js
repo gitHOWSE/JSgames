@@ -19,12 +19,12 @@ class Vacuum extends Entity {
 
     //JAMES: Turning and force.
     params.movement.turningAccelerationFactor = 100;
-
-    //JAMES: Call the parent constructor with our params object
+    //JAMES: Call the parent constructor with params object
     super(params);
 
-    //JAMES: Mark as the player entity
-    this.is_player = true;
+    this.is_player = false;
+    this.is_robot = true;
+    this.is_hackable = true;
 
     //JAMES: Position the vacuum if provided
     if (params.position instanceof THREE.Vector3) {
@@ -41,9 +41,9 @@ class Vacuum extends Entity {
         child.receiveShadow = true;
       }
     });
+    this.model = this.mesh;
     this.mesh.position.copy(this.position);
 
-    this.model.add(this.mesh);
     this.enableBulbLight?.();
     this.enableHeadlights?.();
   }
