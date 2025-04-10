@@ -16,7 +16,7 @@ export class Movement {
   angularVelocity = 0;
   angularAcceleration = 0;
   //JAMES: Base turning acceleration factor (set per entity).
-  turningAccelerationFactor = 1.0;
+  turningAccelerationFactor = 18.0;
   //JAMES: Constant to damp turning effectiveness at high speeds.
   turningSpeedDampening = 1.0;
 
@@ -42,6 +42,8 @@ export class Movement {
 
     const forward = entity.getForwardDirection();
     const accelerationFactor = 10;
+
+    //JAMES: Apply forward/backward acceleration based on input.
     if (controller.isControlActive("up")) {
       this.acceleration.add(forward.clone().multiplyScalar(accelerationFactor));
     }
@@ -51,18 +53,27 @@ export class Movement {
       );
     }
 
+    //JAMES: Determine if the entity is moving backwards using current velocity.
+    // If the dot product between velocity and forward is negative, the entity is moving in reverse.
+    const dot = this.velocity.dot(forward);
+    const movingBackward = dot < 0;
+
     //JAMES: Compute current speed.
     const speed = this.velocity.length();
-
-    //JAMES: Compute effective turning acceleration that decreases with speed.
+    //JAMES: Calculate effective turning acceleration, which decreases with speed.
     const effectiveTurningAcceleration =
       this.turningAccelerationFactor / (1 + this.turningSpeedDampening * speed);
 
-    if (controller.isControlActive("left")) {
-      this.angularAcceleration = effectiveTurningAcceleration;
+    //JAMES: Process left/right input and invert turning direction if moving backward.
+    if (controller.isControlActive("left") && this.isTurning == false) {
+      this.angularAcceleration = movingBackward
+        ? -effectiveTurningAcceleration
+        : effectiveTurningAcceleration;
       this.isTurning = true;
-    } else if (controller.isControlActive("right")) {
-      this.angularAcceleration = -effectiveTurningAcceleration;
+    } else if (controller.isControlActive("right") && this.isTurning == false) {
+      this.angularAcceleration = movingBackward
+        ? effectiveTurningAcceleration
+        : -effectiveTurningAcceleration;
       this.isTurning = true;
     } else {
       this.angularAcceleration = 0;
@@ -75,7 +86,7 @@ export class Movement {
     //JAMES: Integrate angular acceleration.
     this.angularVelocity += this.angularAcceleration * delta;
     //JAMES: Apply damping to angular velocity.
-    const angularDamping = 0.9;
+    const angularDamping = this.isTurning ? 0.995 : 0.9;
     this.angularVelocity *= angularDamping;
     //JAMES: Rotate the current velocity vector around the Y-axis by the angular change.
     this.velocity.applyAxisAngle(

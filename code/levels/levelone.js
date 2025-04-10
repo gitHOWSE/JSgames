@@ -2,58 +2,43 @@
 "use strict";
 
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { cameraManager } from "../Util/Camera.js";
 import { createVacuum } from "../robots/vacuum.js";
+import { createForklift } from "../robots/forklift.js";
 import Floor from "../tilesetc/floor.js";
+import checkHacks from "/robots/hax.js";
 
-let vacuum = null;
+import MapGenerator from "../mapGeneration/MapGenerator.js";
+
+let vacuumPlayer = null;
+let vacuumNPC = null;
+let forklift = null;
 const mixers = [];
-const clock  = new THREE.Clock();
-
-// Path to your single GLB
-const GLB_URL = "/models/lowpoly/animations/forklift/Animation_Sword_Judgment_withSkin.glb";
+const clock = new THREE.Clock();
 
 export async function startLevelOne() {
   try {
-    // 1) Set up vacuum & floor as before
-    vacuum = await createVacuum(new THREE.Vector3(0, 0, 0));
-    vacuum.makePlayer();
-    cameraManager.scene.add(vacuum.mesh);
+    // Player Vacuum
+    vacuumPlayer = await createVacuum(new THREE.Vector3(0, 0, 0));
+    vacuumPlayer.makePlayer();
+    cameraManager.scene.add(vacuumPlayer.model);
 
-    const tempFloor = new Floor({ scene: cameraManager.scene });
-    await waitForModelLoad(tempFloor);
-    cameraManager.scene.remove(tempFloor.model);
+    // Forklift to hack
+    forklift = await createForklift(new THREE.Vector3(3, 0, 0));
+    forklift.setHackable(true);
+    forklift.setRobot();
+    cameraManager.scene.add(forklift.model);
 
-    // 2) Load the animated GLB via GLTFLoader
-    const loader = new GLTFLoader();
-    loader.load(
-      GLB_URL,
-      (gltf) => {
-        // Add the model to the scene
-        const model = gltf.scene;
-        model.position.set(0, 0, -5);
-        cameraManager.scene.add(model);
+    // Extra vacuum (non-player)
+    vacuumNPC = await createVacuum(new THREE.Vector3(-3, 0, 0)); // Off to the left
+    vacuumNPC.setHackable(true); // Optional for testing
+    cameraManager.scene.add(vacuumNPC.model);
 
+    // Floor
+    let mapGen = new MapGenerator(3);
+    const mapGeo = mapGen.generateDebug();
+    cameraManager.scene.add(mapGeo);
 
-
-        // 4) Create a mixer and play the first clip
-        const mixer = new THREE.AnimationMixer(model);
-        const clip  = gltf.animations[0];
-        const action = mixer.clipAction(clip);
-        action.play();
-
-        mixers.push(mixer);
-      },
-      (xhr) => {
-        console.log(`Loading GLB: ${(xhr.loaded / xhr.total * 100).toFixed(1)}%`);
-      },
-      (err) => {
-        console.error("Error loading GLB:", err);
-      }
-    );
-
-    // 5) Kick off the render loop
     animate();
   } catch (err) {
     console.error("Error in startLevelOne:", err);
@@ -64,13 +49,16 @@ function animate() {
   requestAnimationFrame(animate);
 
   const delta = clock.getDelta();
-  if (vacuum && vacuum.update) vacuum.update(delta);
+
+  if (vacuumPlayer && vacuumPlayer.update) vacuumPlayer.update(delta);
+  if (vacuumNPC && vacuumNPC.update) vacuumNPC.update(delta);
+  if (forklift && forklift.update) forklift.update(delta);
+
   mixers.forEach((m) => m.update(delta));
 
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
 }
 
-// Helper to wait until the floor model is in the scene
 function waitForModelLoad(floor) {
   return new Promise((resolve) => {
     const check = () => {

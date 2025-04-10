@@ -2,19 +2,22 @@ import { Entity } from "./Entity.js";
 
 class EntityManager {
   constructor() {
-    this.entities = [];          // Stores all entities
-    this.entitiesToAdd = [];     // To prevent iterator invalidation
-    this.entityMap = new Map();  // Maps entities by tag so manager can give all entities of a tag
+    this.entities = []; // Stores all entities
+    this.entitiesToAdd = []; // To prevent iterator invalidation
+    this.entityMap = new Map(); // Maps entities by tag so manager can give all entities of a tag
   }
 
   // Updates the entities and entityMap to only include entities with positive health.
   removeDeadEntities() {
     // Remove dead entities from the main entities array
-    this.entities = this.entities.filter(e => e.getHealth() > 0);
+    this.entities = this.entities.filter((e) => e.getHealth() > 0);
 
     // Remove dead entities from the map
-    this.entityMap.forEach((arr, key) => { 
-      this.entityMap.set(key, arr.filter(e => e.getHealth() > 0));
+    this.entityMap.forEach((arr, key) => {
+      this.entityMap.set(
+        key,
+        arr.filter((e) => e.getHealth() > 0),
+      );
     });
   }
 
@@ -38,12 +41,14 @@ class EntityManager {
   }
 
   // Adds an entity. If optional parameters are provided, they are passed to the Entity constructor.
-  addEntity(tag, max_health, max_charge, movement, item) {
+  addEntity(entityOrTag, max_health, max_charge, movement, item) {
     let entity;
-    if (max_health === undefined) {
-      entity = new Entity(tag);
+    if (entityOrTag instanceof Entity) {
+      entity = entityOrTag;
+    } else if (max_health === undefined) {
+      entity = new Entity(entityOrTag);
     } else {
-      entity = new Entity(tag, max_health, max_charge, movement, item);
+      entity = new Entity(entityOrTag, max_health, max_charge, movement, item);
     }
     this.entitiesToAdd.push(entity);
     return entity;
@@ -62,3 +67,4 @@ class EntityManager {
 // Create and export a singleton instance of EntityManager.
 const entityManagerInstance = new EntityManager();
 export default entityManagerInstance;
+
