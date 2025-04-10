@@ -3,6 +3,9 @@ import * as THREE from "three";
 import { Movement } from "./Movement.js";
 import { Item } from "./Items.js";
 import checkHacks from "../robots/hax.js";
+
+import { WanderBehaviour } from "../robots/behaviours.js";
+
 export class Entity {
   static nextId = 0;
 
@@ -52,7 +55,6 @@ export class Entity {
     }
 
     //JAMES: Player‑controlled flag
-    this.is_player = false;
     this.is_hackable = false;
     this.is_robot = false;
   }
@@ -120,7 +122,7 @@ export class Entity {
   //JAMES: Centralized per‑frame update.
   update(delta) {
     //JAMES: Handle player input → angular & linear
-    if (this.is_player && window.controller) {
+    if (this === window.player && window.controller) {
       this.movement.updateFromInput(window.controller, this, delta);
       this.movement.updateAngular(delta);
 
@@ -134,13 +136,28 @@ export class Entity {
         .multiply(this.prevQuaternion.clone().invert());
       this.movement.velocity.applyQuaternion(deltaQuat);
       this.prevQuaternion.copy(currentQuat);
+
+      //JAMES: AI wanderers get a steering force but no forward‑snap
+    } else if (this.behaviour) {
+      const steer = this.behaviour.calculate(delta);
+      //JAMES: Clamp steering to maxForce and accumulate
+      this.movement.acceleration.add(
+        steer.clampLength(0, this.movement.maxForce),
+      );
     }
 
-    //JAMES: Friction & linear integration
+    //JAMES: Friction & linear integration (common to both player & AI)
     this.movement.applyFriction();
     this.movement.applyStaticFriction();
-    this.movement.updateLinear(delta, this.getForwardDirection());
+
+    //JAMES: For AI, passing `null` prevents re‑snapping to forward direction.
+    const forwardDir =
+      this === window.player ? this.getForwardDirection() : null;
+    this.movement.updateLinear(delta, forwardDir);
+
+    //JAMES: Integrate position
     this.position.add(this.movement.velocity.clone().multiplyScalar(delta));
+    //JAMES: Clear accumulated acceleration
     this.movement.acceleration.set(0, 0, 0);
 
     //JAMES: Move the model to our new position
@@ -148,33 +165,34 @@ export class Entity {
 
     //JAMES: Lights & camera follow
     this.updateHeadlights();
-    if (this.is_player && window.cameraManager) {
+    if (this === window.player && window.cameraManager) {
       window.cameraManager.followObject(this);
     }
 
+    //JAMES: Check for hacks
     checkHacks(this);
-    //JAMES: Bounding box
+    //JAMES: Update bounding box for collisions/debug
     this.updateBoundingBox();
   }
 
   //JAMES: Mark/unmark as player
   makePlayer() {
-    this.is_hackable = false;
-    this.is_player = true;
+    window.player = this;
+    console.log(`>> makePlayer(): entity ${this.id} is now window.player`);
   }
   unMakePlayer() {
-    this.is_player = false;
-  }
-
-  //JAMES: Accessors
+    if (window.player === this) {
+      console.log(
+        `>> unMakePlayer(): entity ${this.id} removed from window.player`,
+      );
+      window.player = null;
+    }
+  } //JAMES: Accessors
   getId() {
     return this.id;
   }
   getTag() {
     return this.tag;
-  }
-  isPlayer() {
-    return this.is_player;
   }
   isRobot() {
     return this.is_robot;

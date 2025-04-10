@@ -38,8 +38,7 @@ export class Movement {
 
   //JAMES: Update input-based acceleration for player-controlled entity.
   updateFromInput(controller, entity, delta) {
-    if (!entity.is_player) return;
-
+    if (entity !== window.player) return;
     const forward = entity.getForwardDirection();
     const accelerationFactor = 10;
 

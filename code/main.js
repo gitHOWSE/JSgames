@@ -16,6 +16,7 @@ import { LoadingScreen } from "./Util/LoadingScreen.js";
 
 window.controller = controller;
 window.cameraManager = cameraManager;
+window.player = null;
 
 //JAMES: Global debug flag to toggle debugging tools.
 const DEBUG = true;

@@ -16,7 +16,7 @@ class Forklift extends Entity {
     params.armor = 90;
     params.movement = new Movement("wheels", 8, 1); // Slightly slower than vacuum.
     params.item = new Item();
-    params.movement.turningAccelerationFactor = 40;
+    params.movement.turningAccelerationFactor = 20;
 
     //JAMES: This ensures that the parent's constructor creates a fresh Group.
     delete params.model;
@@ -24,7 +24,6 @@ class Forklift extends Entity {
     //JAMES: Call the Entity constructor.
     super(params);
 
-    this.is_player = false;
     this.is_robot = true;
     this.is_hackable = true;
 
@@ -33,9 +32,13 @@ class Forklift extends Entity {
     } else {
       this.position.set(0, 0, 0);
     }
-
+    //JAMES: Adjust visual properties of the forklift's mesh.
     if (this.mesh) {
-      this.mesh.position.copy(this.position);
+      //JAMES: Scale the mesh .
+      this.mesh.scale.set(5, 5, 5);
+      //JAMES: Reposition the mesh within its group.
+      this.mesh.position.set(0, 4, -2);
+      this.mesh.rotation.y = -Math.PI / 2;
     }
   }
 }
@@ -59,7 +62,13 @@ export async function createForklift(position) {
     if (!forkliftModel) {
       throw new Error("Forklift model not found after loading.");
     }
-
+    //JAMES: Scale and position.
+    forkliftModel.scale.set(5, 5, 5);
+    const bbox = new THREE.Box3().setFromObject(forkliftModel);
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+    forkliftModel.position.sub(center);
+    forkliftModel.position.y = bbox.min.y;
     //JAMES: Create a Forklift entity using the asset as 'mesh'.
     const forklift = new Forklift({
       position:

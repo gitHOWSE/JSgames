@@ -6,7 +6,6 @@ import { cameraManager } from "../Util/Camera.js";
 import { createVacuum } from "../robots/vacuum.js";
 import { createForklift } from "../robots/forklift.js";
 import Floor from "../tilesetc/floor.js";
-import checkHacks from "/robots/hax.js";
 
 let vacuumPlayer = null;
 let vacuumNPC = null;

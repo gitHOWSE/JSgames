@@ -8,6 +8,8 @@ import { Entity } from "../entities/Entity.js";
 import entityManager from "../entities/EntityManager.js";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
 
+import { WanderBehaviour } from "../robots/behaviours.js";
+
 class Vacuum extends Entity {
   constructor(params = {}) {
     //JAMES: Ensure the params object has all the bits Entity needs
@@ -22,7 +24,6 @@ class Vacuum extends Entity {
     //JAMES: Call the parent constructor with params object
     super(params);
 
-    this.is_player = false;
     this.is_robot = true;
     this.is_hackable = true;
 
@@ -46,6 +47,11 @@ class Vacuum extends Entity {
 
     this.enableBulbLight?.();
     this.enableHeadlights?.();
+    this.behaviour = new WanderBehaviour(this, {
+      circleDistance: 2, // how far ahead the wander circle is
+      circleRadius: 1, // radius of that circle
+      jitterAmount: 0.3, // how much the wander target jitters each frame
+    });
   }
 }
 

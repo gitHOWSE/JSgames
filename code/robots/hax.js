@@ -18,6 +18,11 @@ function logEntityPositions() {
 //JAMES: Implements a 5-second debounce to prevent repeated hacks.
 export default function checkHacks(playerEntity) {
   const now = Date.now();
+
+  if (window.hackDisabledUntil && now < window.hackDisabledUntil) {
+    return;
+  }
+
   if (!playerEntity.lastHackTime) {
     playerEntity.lastHackTime = 0;
   }
@@ -67,7 +72,7 @@ export default function checkHacks(playerEntity) {
     //JAMES: For testing, using effectiveDistance < 100.
     if (effectiveDistance < 3) {
       playerEntity.lastHackTime = now;
-
+      window.hackDisabledUntil = now + 3000;
       if (target.is_robot) {
         console.log(`//JAMES: Robot entity ${target.id} hacked.`);
         playerEntity.unMakePlayer();

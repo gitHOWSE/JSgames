@@ -85,6 +85,7 @@ export default [
     url: "/models/tilesetc/Escher_s_Steps_0404141451_texture.glb",
   },
   { name: "steps", url: "/models/tilesetc/Steps.glb" },
+  { name: "ramp", url: "models/tilesetc/ramp.glb" },
   {
     name: "highPolyTile",
     url: "/models/tilesetc/Tile_Block_0404141502_texture.glb",
@@ -205,4 +206,3 @@ export default [
     url: "/models/lowpoly/robots/Steampunk_Sentinel_0408235342_texture.glb",
   },
 ];
-
