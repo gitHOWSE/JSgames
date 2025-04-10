@@ -137,7 +137,6 @@ export default [
     name: "gooBackRightRun",
     url: "/models/lowpoly/animations/goo/Animation_BackRight_Run_withSkin.glb",
   },
-
   {
     name: "gooRunning",
     url: "/models/lowpoly/animations/goo/Animation_Running_withSkin.glb",

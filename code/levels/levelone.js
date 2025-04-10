@@ -14,6 +14,11 @@ import { OnwallLow, LOWPOLY_ONWALL_KEYS } from "../explosives/onwall.js";
 let vacuumPlayer = null;
 let vacuumNPC = null;
 let forklift = null;
+import checkHacks from "/robots/hax.js";
+
+import MapGenerator from "../mapGeneration/MapGenerator.js";
+
+const mixers = [];
 const clock = new THREE.Clock();
 
 /**
@@ -84,7 +89,6 @@ function animate() {
   updateStats();
 
   const delta = clock.getDelta();
-
   //JAMES: Update all entities
   if (vacuumPlayer && vacuumPlayer.update) vacuumPlayer.update(delta);
   if (vacuumNPC && vacuumNPC.update) vacuumNPC.update(delta);
@@ -97,11 +101,6 @@ function animate() {
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
 }
 
-/**
- * waitForModelLoad
- * —————————————
- * Utility to wait until a Floor’s model children have loaded.
- */
 function waitForModelLoad(floor) {
   return new Promise((resolve) => {
     const check = () => {

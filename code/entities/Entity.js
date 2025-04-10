@@ -197,6 +197,9 @@ export class Entity {
   isRobot() {
     return this.is_robot;
   }
+  isRobot() {
+    return this.is_robot;
+  }
   getMaxHealth() {
     return this.max_health;
   }

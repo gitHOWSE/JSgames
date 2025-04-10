@@ -2,6 +2,7 @@
   "dependencies": {
     "cd": "^0.3.3",
     "js": "^0.1.0",
+    "simplex-noise": "^2.4.0",
     "stats.js": "^0.17.0",
     "three": "^0.174.0",
     "three-mesh-ui": "^6.5.4"
