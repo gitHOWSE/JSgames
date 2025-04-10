@@ -26,8 +26,8 @@ const clock = new THREE.Clock();
 const loadingScreen = new LoadingScreen(cameraManager.camera);
 
 //JAMES: Create the GUI manager and its start game panel.
-const guiManager = new GuiManager(cameraManager.camera);
-guiManager.createStartGamePanel();
+window.guiManager = new GuiManager(cameraManager.camera);
+window.guiManager.createStartGamePanel();
 
 //JAMES: Integrate debugging tools if DEBUG flag is true.
 let debugHelpers = null;
@@ -37,12 +37,17 @@ if (DEBUG) {
     camera: cameraManager.camera,
     renderer: cameraManager.renderer,
   });
+
+  //JAMES: Ensure the stats panel is on top of the canvas
+  if (debugHelpers.stats && debugHelpers.stats.dom) {
+    debugHelpers.stats.dom.style.zIndex = "100";
+  }
 }
 
 //JAMES: When the Start Game button is pressed, preload assets then start the level.
-guiManager.showPanel("start", async () => {
+window.guiManager.showPanel("start", async () => {
   console.log("Start Game pressed");
-  guiManager.hidePanel("start");
+  window.guiManager.hidePanel("start");
 
   //JAMES: Show the loading screen so the scene is hidden during load.
   loadingScreen.show();
@@ -61,15 +66,39 @@ guiManager.showPanel("start", async () => {
 function animate() {
   requestAnimationFrame(animate);
 
+  if (debugHelpers && debugHelpers.stats) {
+    debugHelpers.stats.begin();
+  }
+
   const delta = clock.getDelta();
   entityManager.update();
 
   //JAMES: Update ThreeMeshUI (this includes the loading screen) each frame.
   ThreeMeshUI.update();
-  guiManager.update();
+  window.guiManager.update();
 
   //JAMES: Render the scene.
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
+
+  if (debugHelpers && debugHelpers.stats) {
+    debugHelpers.stats.end();
+  }
 }
 
 animate();
+
+//JAMES: Instrumentation: every 5s, log scene & entity counts
+if (DEBUG) {
+  setInterval(() => {
+    console.log(
+      `//JAMES: Scene children: ${cameraManager.scene.children.length}, ` +
+        `Entities: ${entityManager.getEntities().length}`,
+    );
+    // Optional: if Chrome, log JS heap
+    if (performance.memory) {
+      console.log(
+        `//JAMES: JS Heap Used: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)} MB`,
+      );
+    }
+  }, 5000);
+}

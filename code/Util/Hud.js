@@ -1,103 +1,85 @@
+// Util/Hud.js
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
 import { cameraManager } from "./Camera.js";
 
 export class HUDManager {
   constructor() {
-    // Create a HUD container with a fixed size (2x2 units); initially hidden.
+    // 1) Root container: full‑screen, transparent, block‑display so children use absolute positions
     this.hudContainer = new ThreeMeshUI.Block({
       width: 2,
       height: 2,
       backgroundOpacity: 0,
+      display: "block",
     });
     this.hudContainer.visible = false;
-    // Attach the HUD container to the camera.
     cameraManager.camera.add(this.hudContainer);
-    // Position the container 2 units in front of the camera.
     this.hudContainer.position.set(0, 0, -1);
     this._disableDepthTest(this.hudContainer);
 
-    // References for dynamic updates.
-    this.batteryFill = null;
-    this.ramText = null;
-  }
+    // 2) Preload RAM icon once
+    this.textureLoader = new THREE.TextureLoader();
+    this.ramIconTexture = this.textureLoader.load(
+      "pictures/ram.png",
+      () => console.log("RAM icon loaded"),
+      undefined,
+      (err) => console.error("Failed to load RAM icon:", err),
+    );
 
-  _disableDepthTest(object) {
-    object.traverse((child) => {
-      if (child.material) {
-        child.material.depthTest = false;
-      }
-    });
-  }
-
-  // Update the HUD using provided parameters (with default values for demo).
-  updateHUD(batteryCurrent = 50, batteryMax = 100, ramValue = 4096) {
-    // Clear any existing children.
-    while (this.hudContainer.children.length) {
-      this.hudContainer.remove(this.hudContainer.children[0]);
-    }
-
-    // The HUD container spans X from -1 to 1 and Y from -1 to 1.
-    const halfWidth = 1.02;
-    const halfHeight = 1.02;
-    const margin = -0.75;
-
-    // ----- Top Left: Battery Panel -----
-    const batteryPanel = new ThreeMeshUI.Block({
+    //
+    // ----- Battery (HP) Panel -----
+    //
+    this.batteryPanel = new ThreeMeshUI.Block({
       width: 0.6,
       height: 0.2,
+      backgroundOpacity: 0.5,
       backgroundColor: new THREE.Color(0x000000),
       padding: 0.01,
       justifyContent: "center",
-      alignItems: "left",
+      alignItems: "start",
+      display: "block", // also block so its children can position freely if needed
     });
-    // Position at top left.
-    batteryPanel.position.set(-halfWidth + margin, halfHeight, 0);
+    // absolute position: center at (–0.7, 0.9)
+    this.batteryPanel.position.set(-0.7, 0.9, 0);
+    this.hudContainer.add(this.batteryPanel);
+
+    // fill bar
     this.batteryFill = new ThreeMeshUI.Block({
       width: 0.58,
       height: 0.18,
       backgroundColor: new THREE.Color(0x00ff00),
     });
-    // Calculate battery percentage.
-    const batteryPercent = Math.max(
-      0,
-      Math.min(1, batteryCurrent / batteryMax),
-    );
-    this.batteryFill.scale.x = batteryPercent;
-    batteryPanel.add(this.batteryFill);
-    this.hudContainer.add(batteryPanel);
+    this.batteryPanel.add(this.batteryFill);
 
-    // ----- Top Right: RAM Panel -----
-    // Use a column layout to stack the RAM icon and the text container.
-    const ramPanel = new ThreeMeshUI.Block({
+    //
+    // ----- RAM Panel -----
+    //
+    this.ramPanel = new ThreeMeshUI.Block({
       width: 0.8,
       height: 0.4,
+      backgroundOpacity: 0.5,
       backgroundColor: new THREE.Color(0x000000),
       padding: 0.01,
       flexDirection: "column",
-      justifyContent: "flex-start",
+      justifyContent: "start",
       alignItems: "center",
+      display: "block",
     });
-    // Position at top right.
-    ramPanel.position.set(halfWidth - margin, halfHeight + margin / 8, 0);
-    // Create the RAM icon block.
-    const ramIcon = new ThreeMeshUI.Block({
+    // absolute position: center at (0.6, 0.8)
+    this.ramPanel.position.set(0.6, 0.8, 0);
+    this.hudContainer.add(this.ramPanel);
+
+    // RAM icon
+    this.ramIcon = new ThreeMeshUI.Block({
       width: 0.18,
       height: 0.18,
-      padding: 0,
       marginBottom: 0.01,
+      backgroundTexture: this.ramIconTexture,
+      display: "block",
     });
-    // Use a dummy texture until the real one loads.
-    const dummyTexture = new THREE.Texture(document.createElement("canvas"));
-    dummyTexture.image.width = 1;
-    dummyTexture.image.height = 1;
-    dummyTexture.needsUpdate = true;
-    ramIcon.set({ backgroundTexture: dummyTexture });
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load("pictures/ram.png", (texture) => {
-      ramIcon.set({ backgroundTexture: texture });
-    });
-    // Create a container for the RAM text with its own background.
+    this.ramPanel.add(this.ramIcon);
+
+    // RAM text container
     const ramTextContainer = new ThreeMeshUI.Block({
       width: 0.6,
       height: 0.12,
@@ -106,22 +88,41 @@ export class HUDManager {
       justifyContent: "center",
       alignItems: "center",
       padding: 0.005,
+      display: "block",
     });
-    // Create the RAM text with bright purple color and a larger font.
     this.ramText = new ThreeMeshUI.Text({
-      content: ramValue.toString(),
+      content: "0", // placeholder
       fontSize: 0.12,
       textColor: new THREE.Color(0xff00ff),
       fontFamily: "./fonts/VT323-Regular.json",
       fontTexture: "./fonts/VT323.png",
     });
     ramTextContainer.add(this.ramText);
-    // Add the RAM icon and then the text container.
-    ramPanel.add(ramIcon);
-    ramPanel.add(ramTextContainer);
-    this.hudContainer.add(ramPanel);
+    this.ramPanel.add(ramTextContainer);
+  }
 
-    this.show();
+  _disableDepthTest(object) {
+    object.traverse((child) => {
+      if (child.material) child.material.depthTest = false;
+    });
+  }
+
+  /**
+   * Call each frame to update the HP bar and RAM text.
+   * @param {number} currentHP — current health
+   * @param {number} maxHP     — max health
+   * @param {number} ramValue  — current RAM
+   */
+  updateHUD(currentHP = 50, maxHP = 100, ramValue = 4096) {
+    // HP fill
+    const fillPct = Math.max(0, Math.min(1, currentHP / maxHP));
+    this.batteryFill.scale.x = fillPct;
+
+    // RAM text
+    this.ramText.set({ content: ramValue.toString() });
+
+    // make sure it’s visible
+    this.hudContainer.visible = true;
   }
 
   show() {

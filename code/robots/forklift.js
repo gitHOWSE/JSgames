@@ -16,7 +16,7 @@ class Forklift extends Entity {
     params.armor = 90;
     params.movement = new Movement("wheels", 8, 1); // Slightly slower than vacuum.
     params.item = new Item();
-    params.movement.turningAccelerationFactor = 20;
+    params.movement.turningAccelerationFactor = 5;
 
     //JAMES: This ensures that the parent's constructor creates a fresh Group.
     delete params.model;

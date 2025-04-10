@@ -65,7 +65,7 @@ export function enableDebugging({
 
   //JAMES: Initialize Stats.js for performance monitoring.
   const stats = new Stats();
-  stats.showPanel(0); //JAMES: 0: fps panel.
+  stats.showPanel(0);
   document.body.appendChild(stats.dom);
   debugHelpers.stats = stats;
 
