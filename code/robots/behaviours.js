@@ -31,7 +31,7 @@ export class WanderBehaviour extends Behaviour {
   //JAMES: jitterAmount: maximum random displacement per frame.
   constructor(
     entity,
-    { circleDistance = 4, circleRadius = 4, jitterAmount = 0.2 } = {},
+    { circleDistance = 2, circleRadius = 1, jitterAmount = 0.2 } = {},
   ) {
     super(entity);
     //JAMES: Set the wander parameters.
@@ -75,3 +75,71 @@ export class WanderBehaviour extends Behaviour {
     return steeringForce;
   }
 }
+
+export class FlockBehaviour extends Behaviour {
+  constructor(entity, {
+    neighbors = [],
+    neighborRadius = 10,
+    alignmentWeight = 1.0,
+    cohesionWeight = 1.0,
+    separationWeight = 1.5
+  } = {}) {
+    super(entity);
+    this.neighbors = neighbors;
+    this.neighborRadius = neighborRadius;
+    this.alignmentWeight = alignmentWeight;
+    this.cohesionWeight = cohesionWeight;
+    this.separationWeight = separationWeight;
+  }
+
+  // 
+  getLocalNeighbors() {
+    return this.neighbors.filter(other => {
+      if (other === this.entity) return false;
+      const dist = other.position.distanceTo(this.entity.position);
+      return dist < this.neighborRadius;
+    });
+  }
+
+  calculate(delta) {
+    const alignment = new THREE.Vector3();
+    const cohesion = new THREE.Vector3();
+    const separation = new THREE.Vector3();
+    const neighbors = this.getLocalNeighbors();
+
+    if (neighbors.length === 0) return new THREE.Vector3(0, 0, 0);
+
+    for (const other of neighbors) {
+      // Alignment: steer towards average heading
+      alignment.add(other.movement.velocity);
+
+      // Cohesion: steer toward average position
+      cohesion.add(other.position);
+
+      // Separation: steer away if too close
+      const toMe = this.entity.position.clone().sub(other.position);
+      const dist = toMe.length();
+      if (dist > 0) {
+        separation.add(toMe.normalize().divideScalar(dist));
+      }
+    }
+
+    // Finalize average calculations
+    alignment.divideScalar(neighbors.length).normalize().multiplyScalar(this.entity.movement.topSpeed);
+    cohesion.divideScalar(neighbors.length).sub(this.entity.position).normalize().multiplyScalar(this.entity.movement.topSpeed);
+    separation.multiplyScalar(this.entity.movement.topSpeed);
+
+    // Steering = desired - current velocity
+    const alignForce = alignment.sub(this.entity.movement.velocity).multiplyScalar(this.alignmentWeight);
+    const cohesionForce = cohesion.sub(this.entity.movement.velocity).multiplyScalar(this.cohesionWeight);
+    const separationForce = separation.sub(this.entity.movement.velocity).multiplyScalar(this.separationWeight);
+
+    // Combine all forces
+    const totalForce = new THREE.Vector3();
+    totalForce.add(alignForce).add(cohesionForce).add(separationForce);
+
+    return totalForce;
+  }
+}
+
+
