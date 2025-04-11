@@ -75,15 +75,27 @@ export default function checkHacks(playerEntity) {
       window.hackDisabledUntil = now + 3000;
       if (target.is_robot) {
         console.log(`//JAMES: Robot entity ${target.id} hacked.`);
+        const previous = playerEntity;
+        previous.isFrozen = true;
+        previous.movement.velocity.set(0, 0, 0);
+        previous.movement.acceleration.set(0, 0, 0);
+        setTimeout(() => playerEntity.setHackable(), 1000);
+        setTimeout(() => {
+          previous.isFrozen = false;
+        }, 10000);
         playerEntity.unMakePlayer();
         target.makePlayer();
         target.movement.velocity.set(0, 0, 0);
-        setTimeout(() => playerEntity.setHackable(), 1000);
       } else {
         console.log(
           `//JAMES: Non-robot entity ${target.id} hacked (disabled).`,
         );
-        target.setHealth(0);
+        target.isFrozen = true;
+        target.movement.velocity.set(0, 0, 0);
+        target.movement.acceleration.set(0, 0, 0);
+        setTimeout(() => {
+          target.isFrozen = false;
+        }, 10000);
       }
 
       break; //JAMES: Hack only one entity per key press.

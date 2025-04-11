@@ -1,62 +1,63 @@
-// JSgames/code/tilesetc/floor.js
-
+// code/tilesetc/floor.js
 //JAMES: Import Three.js and the singleton assetLoader for model loading.
 import * as THREE from "three";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
-
 //JAMES: Import the base Entity class to extend its functionality.
 import { Entity } from "../entities/Entity.js";
 
-class Floor extends Entity {
-  constructor(params = {}) {
-    //JAMES: Call the parent constructor to ensure base initialization.
-    super(params);
+export default class Floor extends Entity {
+  /**
+   * @param {Object} options
+   * @param {THREE.Scene} options.scene
+   * @param {number} [options.x=0]     — world X position
+   * @param {number} [options.z=0]     — world Z position
+   * @param {number} [options.story=0] — which “floor” story (vertical stack)
+   */
+  constructor({ scene, x = 0, z = 0, story = 0 } = {}) {
+    //JAMES: Call Entity constructor for base initialization.
+    super({ scene });
 
-    //JAMES: Create a group to hold the floor model for easy transformations.
+    //JAMES: Create a group to hold the floor mesh.
     this.model = new THREE.Group();
+    scene.add(this.model);
 
-    //JAMES: Add the floor group to the scene if one is provided in parameters.
-    if (params.scene) {
-      params.scene.add(this.model);
-    }
+    //JAMES: Clone the loaded tile mesh from the assetLoader.
+    const tileMesh = assetLoader.clone("tile");
+    this.model.add(tileMesh);
 
-    //JAMES: Clone the already-loaded tile mesh from the singleton assetLoader.
-    try {
-      const tileScene = assetLoader.clone("tile");
-      this.model.add(tileScene);
+    //JAMES: Apply default scaling.
+    const scaleXZ = 6,
+      scaleY = 5;
+    this.model.scale.set(scaleXZ, scaleY, scaleXZ);
 
-      //JAMES: Adjust the scale and position.
-      const scaleXZ = 6;
-      const scaleY = 5;
-      this.model.scale.set(scaleXZ, scaleY, scaleXZ);
+    //JAMES: Compute bounding box to determine model height.
+    const bbox = new THREE.Box3().setFromObject(this.model);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
 
-      //JAMES: Compute bounding box to align the tile with the ground.
-      const bbox = new THREE.Box3().setFromObject(this.model);
-      this.model.position.set(0, -bbox.max.y, 0);
-    } catch (err) {
-      console.error(
-        "Floor tile not loaded yet. Ensure assetLoader.loadAll() is called before creating Floor.",
-        err,
-      );
-    }
+    //JAMES: Base offset to align bottom of mesh with y=0.
+    const baseOffsetY = -bbox.min.y;
+    //JAMES: Story offset to stack floors by their own height.
+    const storyOffsetY = story * size.y;
+
+    //JAMES: Position the floor in world space.
+    this.model.position.set(x, baseOffsetY + storyOffsetY, z);
   }
 
-  //JAMES: Override update for static entities; no per-frame updates are necessary.
-  update(delta) {
-    // Static floor does not require dynamic updates.
-  }
+  //JAMES: Static floor does not require per‑frame updates.
+  update(delta) {}
 
-  //JAMES: Method to rotate the floor 90° around the X-axis.
+  //JAMES: Rotate the floor 90° around the X-axis.
   rotateX90() {
     this.model.rotation.x += Math.PI / 2;
   }
 
-  //JAMES: Method to rotate the floor 90° around the Y-axis.
+  //JAMES: Rotate the floor 90° around the Y-axis.
   rotateY90() {
     this.model.rotation.y += Math.PI / 2;
   }
 
-  //JAMES: Method to rotate the floor 90° around the Z-axis.
+  //JAMES: Rotate the floor 90° around the Z-axis.
   rotateZ90() {
     this.model.rotation.z += Math.PI / 2;
   }
@@ -69,5 +70,3 @@ class Floor extends Entity {
     return size;
   }
 }
-
-export default Floor;

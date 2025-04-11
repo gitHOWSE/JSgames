@@ -31,7 +31,7 @@ export class WanderBehaviour extends Behaviour {
   //JAMES: jitterAmount: maximum random displacement per frame.
   constructor(
     entity,
-    { circleDistance = 2, circleRadius = 1, jitterAmount = 0.2 } = {},
+    { circleDistance = 4, circleRadius = 4, jitterAmount = 0.2 } = {},
   ) {
     super(entity);
     //JAMES: Set the wander parameters.
