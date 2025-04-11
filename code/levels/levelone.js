@@ -4,76 +4,79 @@
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
 import { cameraManager } from "../Util/Camera.js";
-// Use the drone for player control.
-import { createDrone } from "../robots/drone.js";
+import { createVacuum } from "../robots/vacuum.js";
+import { createForklift } from "../robots/forklift.js";
 import Floor from "../tilesetc/floor.js";
-import Wall from "../tilesetc/wall.js";
-import Ramp from "../tilesetc/ramp.js";
-import Steps from "../tilesetc/steps.js"; // Assumes you have a similar Steps file defined.
 import { updateStats } from "../player/stats.js";
-import checkHacks from "../robots/hax.js";
+import { OnfloorLow, LOWPOLY_ONFLOOR_KEYS } from "../explosives/onfloor.js";
+import { OnwallLow, LOWPOLY_ONWALL_KEYS } from "../explosives/onwall.js";
 
+let vacuumPlayer = null;
+let vacuumNPC = null;
+let forklift = null;
+import checkHacks from "/robots/hax.js";
+
+import MapGenerator from "../mapGeneration/MapGenerator.js";
+
+const mixers = [];
 const clock = new THREE.Clock();
-
-let playerDrone = null; // The player-controlled drone
-let testWall = null; // A wall object for collision demonstration
-let testRamp = null; // A ramp for slope adjustment
-let testSteps = null; // A steps object for vertical movement demonstration
 
 /**
  * startLevelOne
  * —————————
- * Sets up the scene with:
- *   • A ground floor at the origin (story 0)
- *   • A wall located at (0, 0, 20) on story 0
- *   • A ramp located at (30, 0, 0) on story 0
- *   • A set of steps located at (60, 0, 0) on story 0
- *   • The player drone starting at (0, 0, -10)
+ * Sets up the player, NPCs, floor, and spawns all on‑floor and on‑wall
+ * low‑poly assets for inspection.
  */
 export async function startLevelOne() {
   try {
-    // Create the ground floor at (0,0,0) on story 0.
-    const floor = new Floor({
-      scene: cameraManager.scene,
-      x: 0,
-      z: 0,
-      story: 0,
+    //JAMES: Player vacuum at origin
+    vacuumPlayer = await createVacuum(new THREE.Vector3(0, 0, 0));
+    vacuumPlayer.makePlayer();
+    cameraManager.scene.add(vacuumPlayer.model);
+
+    /*
+    //JAMES: Forklift to hack at (3,0,0)
+    forklift = await createForklift(new THREE.Vector3(3, 0, 0));
+    forklift.setHackable(true);
+    forklift.setRobot();
+    cameraManager.scene.add(forklift.model);
+
+    //JAMES: NPC vacuum at (-3,0,0)
+    vacuumNPC = await createVacuum(new THREE.Vector3(-3, 0, 0));
+    vacuumNPC.setHackable(true);
+    cameraManager.scene.add(vacuumNPC.model);
+
+    //JAMES: Temporary floor entity for collisions (remove its mesh)
+    const tempFloor = new Floor({ scene: cameraManager.scene });
+    await waitForModelLoad(tempFloor);
+    cameraManager.scene.remove(tempFloor.model);
+
+    //JAMES: Spawn all low‑poly on‑floor assets in a centered row
+    const floorSpacing = 4;
+    const floorStartX = -((LOWPOLY_ONFLOOR_KEYS.length - 1) * floorSpacing) / 2;
+    LOWPOLY_ONFLOOR_KEYS.forEach((assetName, i) => {
+      const pos = new THREE.Vector3(floorStartX + i * floorSpacing, 0, -5);
+      new OnfloorLow(assetName, pos, cameraManager.scene);
     });
-    await waitForModelLoad(floor);
 
-    // Create a vertical wall at (0,0,20) on story 0.
-    testWall = new Wall({
-      scene: cameraManager.scene,
-      x: 0,
-      z: 20,
-      story: 0,
+    //JAMES: Spawn all low‑poly on‑wall assets in a second row above
+    const wallSpacing = 4;
+    const wallStartX = -((LOWPOLY_ONWALL_KEYS.length - 1) * wallSpacing) / 2;
+    LOWPOLY_ONWALL_KEYS.forEach((assetName, i) => {
+      const pos = new THREE.Vector3(
+        wallStartX + i * wallSpacing,
+        2, // Y = 2 units up the wall
+        -8, // Z = -8 units back
+      );
+      new OnwallLow(assetName, pos, cameraManager.scene);
     });
-    await waitForModelLoad(testWall);
+    */
 
-    // Create a ramp at (30,0,0) on story 0.
-    testRamp = new Ramp({
-      scene: cameraManager.scene,
-      x: 30,
-      z: 0,
-      story: 0,
-    });
-    await waitForModelLoad(testRamp);
+    let mapGen = new MapGenerator();
+    let mapGeo = mapGen.generateDebug();
+    cameraManager.scene.add(mapGeo);
 
-    // Create a set of steps at (60,0,0) on story 0.
-    testSteps = new Steps({
-      scene: cameraManager.scene,
-      x: 60,
-      z: 0,
-      story: 0,
-    });
-    await waitForModelLoad(testSteps);
-
-    // Spawn the player-controlled drone at (0,0,-10).
-    playerDrone = await createDrone(new THREE.Vector3(0, 0, -10));
-    playerDrone.makePlayer();
-    cameraManager.scene.add(playerDrone.model);
-
-    // Begin the render/update loop.
+    //JAMES: Kick off the render/update loop
     animate();
   } catch (err) {
     console.error("Error in startLevelOne:", err);
@@ -83,46 +86,31 @@ export async function startLevelOne() {
 /**
  * animate
  * —————
- * Per‑frame update: checks for hack input, refreshes HUD stats, updates entities,
- * updates ThreeMeshUI elements, and renders the scene.
+ * Per‑frame update: HUD, entity updates, UI rebuild, and render.
  */
 function animate() {
   requestAnimationFrame(animate);
 
-  // Check for hack input on the player drone.
-  if (playerDrone) checkHacks(playerDrone);
-
-  // Refresh HUD (using HP as battery and current RAM).
+  //JAMES: Refresh HUD (HP‑as‑battery & RAM)
   updateStats();
 
   const delta = clock.getDelta();
+  //JAMES: Update all entities
+  if (vacuumPlayer && vacuumPlayer.update) vacuumPlayer.update(delta);
+  if (vacuumNPC && vacuumNPC.update) vacuumNPC.update(delta);
+  if (forklift && forklift.update) forklift.update(delta);
 
-  // Update the player drone.
-  if (playerDrone && playerDrone.update) playerDrone.update(delta);
-
-  // Update the wall, ramp, and steps (for collision and/or special behavior).
-  if (testWall && testWall.update) testWall.update(delta);
-  if (testRamp && testRamp.update) testRamp.update(delta);
-  if (testSteps && testSteps.update) testSteps.update(delta);
-
-  // Update ThreeMeshUI elements (HUD, menus, etc.).
+  //JAMES: Rebuild ThreeMeshUI elements (HUD, menus, etc.)
   ThreeMeshUI.update();
 
-  // Render the scene.
+  //JAMES: Render the scene
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
 }
 
-/**
- * waitForModelLoad
- * —————
- * Utility function to pause until an entity's model has loaded (i.e., has at least one child).
- * @param {Object} entity — The entity whose model children are checked.
- * @returns {Promise<void>}
- */
-function waitForModelLoad(entity) {
+function waitForModelLoad(floor) {
   return new Promise((resolve) => {
     const check = () => {
-      if (entity.model && entity.model.children.length) resolve();
+      if (floor.model && floor.model.children.length) resolve();
       else setTimeout(check, 10);
     };
     check();
