@@ -19,6 +19,7 @@ export class Entity {
     this.health = this.max_health;
     this.max_charge = params.max_charge ?? 60;
     this.charge = this.max_charge;
+    this.isFrozen = false;
 
     //JAMES: Position vectors
     this.position = params.position?.clone() || new THREE.Vector3();
@@ -27,6 +28,7 @@ export class Entity {
     //JAMES: Movement and carried item
     this.movement = params.movement || new Movement();
     this.item = params.item || new Item();
+    this.has_legs = false;
 
     //JAMES: The root Group for all visuals of this entity
     this.model = params.model || new THREE.Group();
@@ -121,7 +123,10 @@ export class Entity {
 
   //JAMES: Centralized per‑frame update.
   update(delta) {
-    //JAMES: Handle player input → angular & linear
+    if (this.isFrozen) {
+      // skip all movement, hacking, etc. while frozen
+      return;
+    }
     if (this === window.player && window.controller) {
       this.movement.updateFromInput(window.controller, this, delta);
       this.movement.updateAngular(delta);
@@ -218,6 +223,9 @@ export class Entity {
   getHackable() {
     return this.is_hackable;
   }
+  getLegs() {
+    return this.has_legs;
+  }
   setHealth(h) {
     this.health = Math.min(this.max_health, h);
   }
@@ -232,5 +240,12 @@ export class Entity {
   }
   setRobot() {
     this.is_robot = true;
+  }
+  setLegs(t) {
+    if (t === true) {
+      this.has_legs = true;
+    } else {
+      this.has_legs = false;
+    }
   }
 }
