@@ -1,20 +1,22 @@
 // code/tilesetc/floor.js
-//JAMES: Import Three.js and the singleton assetLoader for model loading.
+//JAMES: Import Three.js and the assetLoader for model loading.
 import * as THREE from "three";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
 //JAMES: Import the base Entity class to extend its functionality.
 import { Entity } from "../entities/Entity.js";
+//JAMES: Import entityManager for collision detection.
+import entityManager from "../entities/EntityManager.js";
 
 export default class Floor extends Entity {
   /**
    * @param {Object} options
-   * @param {THREE.Scene} options.scene
-   * @param {number} [options.x=0]     — world X position
-   * @param {number} [options.z=0]     — world Z position
-   * @param {number} [options.story=0] — which “floor” story (vertical stack)
+   * @param {THREE.Scene} options.scene      — The scene to add the floor.
+   * @param {number} [options.x=0]           — World X position.
+   * @param {number} [options.z=0]           — World Z position.
+   * @param {number} [options.story=0]       — Building story (each integer adds one floor height).
    */
   constructor({ scene, x = 0, z = 0, story = 0 } = {}) {
-    //JAMES: Call Entity constructor for base initialization.
+    //JAMES: Call Entity constructor for standard initialization.
     super({ scene });
 
     //JAMES: Create a group to hold the floor mesh.
@@ -30,39 +32,101 @@ export default class Floor extends Entity {
       scaleY = 5;
     this.model.scale.set(scaleXZ, scaleY, scaleXZ);
 
-    //JAMES: Compute bounding box to determine model height.
-    const bbox = new THREE.Box3().setFromObject(this.model);
+    //JAMES: Compute the floor's bounding box and size.
+    this.boundingBox = new THREE.Box3().setFromObject(this.model);
     const size = new THREE.Vector3();
-    bbox.getSize(size);
+    this.boundingBox.getSize(size);
 
-    //JAMES: Base offset to align bottom of mesh with y=0.
-    const baseOffsetY = -bbox.min.y;
-    //JAMES: Story offset to stack floors by their own height.
+    //JAMES: Compute the base offset so that the bottom of the mesh lines up with y = 0.
+    const baseOffsetY = -this.boundingBox.min.y;
+    //JAMES: Compute a story offset (stacking floors vertically).
     const storyOffsetY = story * size.y;
 
     //JAMES: Position the floor in world space.
     this.model.position.set(x, baseOffsetY + storyOffsetY, z);
   }
 
-  //JAMES: Static floor does not require per‑frame updates.
-  update(delta) {}
+  /**
+   * JAMES: Update method that checks for collisions with moving entities.
+   *        If an entity intersects this floor's bounding box, it reflects the entity's velocity
+   *        along the axis with the smallest penetration, then pushes the entity out of the floor.
+   * @param {number} delta — Time elapsed since the last update.
+   */
+  update(delta) {
+    //JAMES: Refresh the floor's bounding box according to its current transformation.
+    this.boundingBox.setFromObject(this.model);
 
-  //JAMES: Rotate the floor 90° around the X-axis.
+    //JAMES: Prepare temporary objects for collision calculations.
+    const tempOverlap = new THREE.Box3();
+    const entBB = new THREE.Box3();
+    const overlapSize = new THREE.Vector3();
+    const entCenter = new THREE.Vector3();
+    const floorCenter = new THREE.Vector3();
+    const normal = new THREE.Vector3();
+
+    //JAMES: Iterate over all entities that might be moving.
+    entityManager.getEntities().forEach((ent) => {
+      //JAMES: Skip non-moving entities and avoid self-collision.
+      if (!ent.movement || ent.id === this.id) return;
+
+      //JAMES: Update the entity's bounding box.
+      ent.updateBoundingBox();
+      entBB.copy(ent.boundingBox);
+
+      //JAMES: Check for intersection between the entity and the floor.
+      if (entBB.intersectsBox(this.boundingBox)) {
+        //JAMES: Compute the overlapping region (penetration volume).
+        tempOverlap.copy(entBB).intersect(this.boundingBox);
+        tempOverlap.getSize(overlapSize);
+
+        //JAMES: Determine the axis (x, y, or z) where the overlap is smallest.
+        let axis = "x";
+        if (overlapSize.y < overlapSize.x && overlapSize.y < overlapSize.z) {
+          axis = "y";
+        } else if (
+          overlapSize.z < overlapSize.x &&
+          overlapSize.z < overlapSize.y
+        ) {
+          axis = "z";
+        }
+
+        //JAMES: Calculate the centers of the entity's and floor's bounding boxes.
+        entBB.getCenter(entCenter);
+        this.boundingBox.getCenter(floorCenter);
+
+        //JAMES: Set the collision normal on the smallest overlapping axis.
+        normal.set(0, 0, 0);
+        normal[axis] = entCenter[axis] > floorCenter[axis] ? 1 : -1;
+
+        //JAMES: Reflect the entity's velocity about the normal.
+        const v = ent.movement.velocity.clone();
+        const dot = v.dot(normal);
+        const reflected = v.sub(normal.clone().multiplyScalar(2 * dot));
+        ent.movement.velocity.copy(reflected);
+
+        //JAMES: Push the entity out of the floor along the chosen axis by the overlap distance plus a small buffer.
+        const pushDist = overlapSize[axis] + 0.1;
+        ent.model.position.add(normal.clone().multiplyScalar(pushDist));
+        ent.position.copy(ent.model.position);
+
+        //JAMES: Update the entity's bounding box to prevent re-collision.
+        ent.updateBoundingBox();
+      }
+    });
+  }
+
+  //JAMES: Helper methods to rotate the floor by 90 degrees around each axis.
   rotateX90() {
     this.model.rotation.x += Math.PI / 2;
   }
-
-  //JAMES: Rotate the floor 90° around the Y-axis.
   rotateY90() {
     this.model.rotation.y += Math.PI / 2;
   }
-
-  //JAMES: Rotate the floor 90° around the Z-axis.
   rotateZ90() {
     this.model.rotation.z += Math.PI / 2;
   }
 
-  //JAMES: Returns the world-space dimensions of the floor model.
+  //JAMES: Returns the current world-space dimensions of the floor.
   getDimensions() {
     const bbox = new THREE.Box3().setFromObject(this.model);
     const size = new THREE.Vector3();
