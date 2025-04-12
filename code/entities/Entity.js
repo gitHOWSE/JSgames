@@ -26,6 +26,7 @@ export class Entity {
     this.prevPosition = this.position.clone();
 
     //JAMES: Movement and carried item
+    this.isMovable = true;
     this.movement = params.movement || new Movement();
     this.item = params.item || new Item();
     this.has_legs = false;
@@ -223,11 +224,17 @@ export class Entity {
   getHackable() {
     return this.is_hackable;
   }
+  getMovable() {
+    return this.isMovable;
+  }
   getLegs() {
     return this.has_legs;
   }
   setHealth(h) {
     this.health = Math.min(this.max_health, h);
+  }
+  setMovable(t) {
+    this.isMovable = t;
   }
   heal(h) {
     this.health = Math.min(this.max_health, this.health + h);

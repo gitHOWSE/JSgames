@@ -14,7 +14,7 @@ export class HUDManager {
     });
     this.hudContainer.visible = false;
     cameraManager.camera.add(this.hudContainer);
-    this.hudContainer.position.set(1.5, 0.08, -1);
+    this.hudContainer.position.set(1.5, 0.14, -1);
 
     // Disable depth test so HUD always renders on top
     this._disableDepthTest(this.hudContainer);

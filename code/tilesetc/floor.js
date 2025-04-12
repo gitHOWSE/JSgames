@@ -1,10 +1,7 @@
 // code/tilesetc/floor.js
-//JAMES: Import Three.js and the assetLoader for model loading.
 import * as THREE from "three";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
-//JAMES: Import the base Entity class to extend its functionality.
 import { Entity } from "../entities/Entity.js";
-//JAMES: Import entityManager for collision detection.
 import entityManager from "../entities/EntityManager.js";
 
 export default class Floor extends Entity {
@@ -19,6 +16,7 @@ export default class Floor extends Entity {
     //JAMES: Call Entity constructor for standard initialization.
     super({ scene });
 
+    this.setMovable(false);
     //JAMES: Create a group to hold the floor mesh.
     this.model = new THREE.Group();
     scene.add(this.model);
@@ -38,7 +36,7 @@ export default class Floor extends Entity {
     this.boundingBox.getSize(size);
 
     //JAMES: Compute the base offset so that the bottom of the mesh lines up with y = 0.
-    const baseOffsetY = -this.boundingBox.min.y;
+    const baseOffsetY = -this.boundingBox.min.y - 10.4;
     //JAMES: Compute a story offset (stacking floors vertically).
     const storyOffsetY = story * size.y;
 
@@ -48,8 +46,6 @@ export default class Floor extends Entity {
 
   /**
    * JAMES: Update method that checks for collisions with moving entities.
-   *        If an entity intersects this floor's bounding box, it reflects the entity's velocity
-   *        along the axis with the smallest penetration, then pushes the entity out of the floor.
    * @param {number} delta — Time elapsed since the last update.
    */
   update(delta) {
@@ -67,7 +63,7 @@ export default class Floor extends Entity {
     //JAMES: Iterate over all entities that might be moving.
     entityManager.getEntities().forEach((ent) => {
       //JAMES: Skip non-moving entities and avoid self-collision.
-      if (!ent.movement || ent.id === this.id) return;
+      if (!ent.getMovable() || ent.id === this.id) return;
 
       //JAMES: Update the entity's bounding box.
       ent.updateBoundingBox();

@@ -8,8 +8,8 @@ import { controller } from "./Util/Controller.js";
 import { hudManager } from "./Util/Hud.js";
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
-import { startLevelOne } from "./levels/levelone.js";
 import { enableDebugging } from "./DebugTools.js";
+import { startLevelOne, updateLevelOne } from "./levels/levelone.js";
 import entityManager from "./entities/EntityManager.js";
 import { assetLoader } from "./Util/AdvancedAssetLoader.js";
 import { LoadingScreen } from "./Util/LoadingScreen.js";
@@ -60,6 +60,7 @@ window.guiManager.showPanel("start", async () => {
 
   //JAMES: Then, start Level One.
   startLevelOne();
+  let levelOne = true;
 });
 
 //JAMES: Main render and update loop.
@@ -83,6 +84,7 @@ function animate() {
   if (debugHelpers && debugHelpers.stats) {
     debugHelpers.stats.end();
   }
+  updateLevelOne(delta);
 }
 
 animate();

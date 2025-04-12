@@ -3,116 +3,173 @@
 
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
-import { cameraManager } from "../Util/Camera.js";
-import { createVacuum } from "../robots/vacuum.js";
-import { createForklift } from "../robots/forklift.js";
-import Floor from "../tilesetc/floor.js";
-import { updateStats } from "../player/stats.js";
-import { OnfloorLow, LOWPOLY_ONFLOOR_KEYS } from "../explosives/onfloor.js";
-import { OnwallLow, LOWPOLY_ONWALL_KEYS } from "../explosives/onwall.js";
 
-let vacuumPlayer = null;
-let vacuumNPC = null;
-let forklift = null;
-import checkHacks from "/robots/hax.js";
+import { cameraManager } from "../Util/Camera.js";
+import { createDrone } from "../robots/drone.js";
+import { updateStats } from "../player/stats.js";
+import checkHacks from "../robots/hax.js";
 
 import MapGenerator from "../mapGeneration/MapGenerator.js";
+import { tileManager } from "../tilesetc/tileManager.js";
+import Floor from "../tilesetc/floor.js";
+import Wall from "../tilesetc/wall.js";
+import Ramp from "../tilesetc/ramp.js";
+import Steps from "../tilesetc/steps.js";
 
-const mixers = [];
-const clock = new THREE.Clock();
+export let playerDrone = null;
+
+// JAMES: This constant must match the scale used in your tile classes (tile grid spacing).
+const TILE_SIZE_XZ = 12;
 
 /**
  * startLevelOne
  * —————————
- * Sets up the player, NPCs, floor, and spawns all on‑floor and on‑wall
- * low‑poly assets for inspection.
+ * Generates a procedural map, instantiates every tile into the scene (and registers each tile
+ * with the TileManager for throttled updates), then spawns the player-controlled drone at the center.
  */
 export async function startLevelOne() {
-  try {
-    //JAMES: Player vacuum at origin
-    vacuumPlayer = await createVacuum(new THREE.Vector3(0, 0, 0));
-    vacuumPlayer.makePlayer();
-    cameraManager.scene.add(vacuumPlayer.model);
+  // JAMES: 1) Build the logical map.
+  const mapGen = new MapGenerator(1, Math.random());
+  mapGen.generateMap();
+  const { tileArray, length, width, maxHeight } = mapGen;
 
-    /*
-    //JAMES: Forklift to hack at (3,0,0)
-    forklift = await createForklift(new THREE.Vector3(3, 0, 0));
-    forklift.setHackable(true);
-    forklift.setRobot();
-    cameraManager.scene.add(forklift.model);
+  // JAMES: Calculate half-dimensions so that the map is centered at the origin.
+  const halfX = length / 2;
+  const halfZ = width / 2;
 
-    //JAMES: NPC vacuum at (-3,0,0)
-    vacuumNPC = await createVacuum(new THREE.Vector3(-3, 0, 0));
-    vacuumNPC.setHackable(true);
-    cameraManager.scene.add(vacuumNPC.model);
+  // JAMES: 2) Instantiate every tile in the map.
+  for (let x = 0; x < length; x++) {
+    for (let y = 0; y < maxHeight; y++) {
+      for (let z = 0; z < width; z++) {
+        const tile = tileArray[x][y][z];
+        const type = tile.getType();
+        const facing = tile.getFacing();
 
-    //JAMES: Temporary floor entity for collisions (remove its mesh)
-    const tempFloor = new Floor({ scene: cameraManager.scene });
-    await waitForModelLoad(tempFloor);
-    cameraManager.scene.remove(tempFloor.model);
+        // JAMES: Compute the world position of each tile so that the grid is centered.
+        const worldX = (x - halfX) * TILE_SIZE_XZ;
+        const worldZ = (z - halfZ) * TILE_SIZE_XZ;
+        const storyY = y; // Each tile class will interpret this "story" value to adjust Y internally.
 
-    //JAMES: Spawn all low‑poly on‑floor assets in a centered row
-    const floorSpacing = 4;
-    const floorStartX = -((LOWPOLY_ONFLOOR_KEYS.length - 1) * floorSpacing) / 2;
-    LOWPOLY_ONFLOOR_KEYS.forEach((assetName, i) => {
-      const pos = new THREE.Vector3(floorStartX + i * floorSpacing, 0, -5);
-      new OnfloorLow(assetName, pos, cameraManager.scene);
-    });
+        let instance = null;
 
-    //JAMES: Spawn all low‑poly on‑wall assets in a second row above
-    const wallSpacing = 4;
-    const wallStartX = -((LOWPOLY_ONWALL_KEYS.length - 1) * wallSpacing) / 2;
-    LOWPOLY_ONWALL_KEYS.forEach((assetName, i) => {
-      const pos = new THREE.Vector3(
-        wallStartX + i * wallSpacing,
-        2, // Y = 2 units up the wall
-        -8, // Z = -8 units back
-      );
-      new OnwallLow(assetName, pos, cameraManager.scene);
-    });
-    */
+        // JAMES: Create a tile instance based on its type.
+        switch (type) {
+          case "wall":
+            instance = new Wall({
+              scene: cameraManager.scene,
+              x: worldX,
+              z: worldZ,
+              story: storyY,
+            });
+            break;
 
-    let mapGen = new MapGenerator();
-    let mapGeo = mapGen.generateDebug();
-    cameraManager.scene.add(mapGeo);
+          case "floor":
+            instance = new Floor({
+              scene: cameraManager.scene,
+              x: worldX,
+              z: worldZ,
+              story: storyY,
+            });
+            break;
 
-    //JAMES: Kick off the render/update loop
-    animate();
-  } catch (err) {
-    console.error("Error in startLevelOne:", err);
+          case "ramp":
+            instance = new Ramp({
+              scene: cameraManager.scene,
+              x: worldX,
+              z: worldZ,
+              story: storyY,
+            });
+            // JAMES: Set the ramp's orientation based on the facing value.
+            // If the instance provides explicit orientation methods, use them.
+            if (
+              typeof instance.setOrientationNorth === "function" &&
+              typeof instance.setOrientationEast === "function"
+            ) {
+              switch (facing) {
+                case 0:
+                  instance.setOrientationNorth();
+                  break;
+                case 1:
+                  instance.setOrientationEast();
+                  break;
+                case 2:
+                  instance.setOrientationSouth();
+                  break;
+                case 3:
+                  instance.setOrientationWest();
+                  break;
+                default:
+                  instance.model.rotation.y = facing * (Math.PI / 2);
+              }
+            } else {
+              // JAMES: Fallback orientation by directly modifying the Y rotation.
+              instance.model.rotation.y = facing * (Math.PI / 2);
+            }
+            break;
+
+          case "stair":
+            instance = new Steps({
+              scene: cameraManager.scene,
+              x: worldX,
+              z: worldZ,
+              story: storyY,
+            });
+            // JAMES: Rotate the steps based on the facing value.
+            instance.model.rotation.y = facing * (Math.PI / 2);
+            break;
+
+          // JAMES: Skip other tile types (e.g. 'air').
+        }
+
+        // JAMES: If an instance was created, add it to the tile manager.
+        if (instance) {
+          // JAMES: await ensures the tile is definitely added.
+          await tileManager.addTile(instance);
+        }
+      }
+    }
   }
+
+  // JAMES: 3) Spawn the player-controlled drone at the center of the ground floor (story 1).
+  const spawnGridX = Math.floor(length / 2);
+  const spawnGridZ = Math.floor(width / 2);
+  const spawnWorldX = (spawnGridX - halfX) * TILE_SIZE_XZ;
+  const spawnWorldZ = (spawnGridZ - halfZ) * TILE_SIZE_XZ;
+  const spawnY = 1; // Story index 1 corresponds to the second layer.
+
+  playerDrone = await createDrone(
+    new THREE.Vector3(spawnWorldX, spawnY, spawnWorldZ),
+  );
+  playerDrone.makePlayer();
+  cameraManager.scene.add(playerDrone.model);
 }
 
 /**
- * animate
- * —————
- * Per‑frame update: HUD, entity updates, UI rebuild, and render.
+ * updateLevelOne
+ * —————————
+ * Call this function every frame (passing delta time) from your main loop.
+ * It processes hack input, refreshes HUD stats, updates the player and all tiles via the tile manager,
+ * rebuilds UI elements, and renders the scene.
+ * @param {number} delta - Time elapsed since the last frame.
  */
-function animate() {
-  requestAnimationFrame(animate);
+export function updateLevelOne(delta) {
+  // JAMES: Process hack input on the player-controlled drone.
+  if (playerDrone) checkHacks(playerDrone);
 
-  //JAMES: Refresh HUD (HP‑as‑battery & RAM)
+  // JAMES: Refresh the HUD (using HP as battery and current RAM).
   updateStats();
 
-  const delta = clock.getDelta();
-  //JAMES: Update all entities
-  if (vacuumPlayer && vacuumPlayer.update) vacuumPlayer.update(delta);
-  if (vacuumNPC && vacuumNPC.update) vacuumNPC.update(delta);
-  if (forklift && forklift.update) forklift.update(delta);
+  // JAMES: Update the player-controlled drone.
+  if (playerDrone && playerDrone.update) {
+    playerDrone.update(delta);
+  }
 
-  //JAMES: Rebuild ThreeMeshUI elements (HUD, menus, etc.)
+  // JAMES: Throttled update of all registered tiles.
+  tileManager.update(delta);
+
+  // JAMES: Rebuild any ThreeMeshUI elements (HUD, menus, etc.).
   ThreeMeshUI.update();
 
-  //JAMES: Render the scene
+  // JAMES: Render the scene.
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
-}
-
-function waitForModelLoad(floor) {
-  return new Promise((resolve) => {
-    const check = () => {
-      if (floor.model && floor.model.children.length) resolve();
-      else setTimeout(check, 10);
-    };
-    check();
-  });
 }

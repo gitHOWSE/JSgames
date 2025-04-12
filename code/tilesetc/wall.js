@@ -1,5 +1,4 @@
 // code/tilesetc/wall.js
-//JAMES: Import Three.js, assetLoader, Entity base class, and EntityManager for collision checks.
 import * as THREE from "three";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
 import { Entity } from "../entities/Entity.js";
@@ -20,16 +19,16 @@ export default class Wall extends Entity {
     //JAMES: Base Entity initialization (sets up ID, tag, boundingBox, etc.)
     super({ scene });
 
+    this.setMovable(false);
     //JAMES: Create a group to hold the wall mesh and add it to the scene.
     this.model = new THREE.Group();
     scene.add(this.model);
-
     //JAMES: Clone the wall mesh from the loader and add it.
     const wallMesh = assetLoader.clone("wall");
     this.model.add(wallMesh);
 
     //JAMES: Apply the same default scale as Floor.
-    const scaleXZ = 6,
+    const scaleXZ = 7.95,
       scaleY = 5;
     this.model.scale.set(scaleXZ, scaleY, scaleXZ);
 
@@ -39,7 +38,7 @@ export default class Wall extends Entity {
     this.boundingBox.getSize(size);
 
     //JAMES: Compute vertical offsets: base aligns bottom at y=0; story stacks by height.
-    const baseOffsetY = -this.boundingBox.min.y;
+    const baseOffsetY = -this.boundingBox.min.y - 1;
     const storyOffsetY = story * size.y;
 
     //JAMES: Position the wall in world space.
@@ -66,7 +65,7 @@ export default class Wall extends Entity {
 
     //JAMES: Loop over all entities with movement (i.e. potential movers).
     entityManager.getEntities().forEach((ent) => {
-      if (!ent.movement) return; // skip non‑moving entities
+      if (!ent.getMovable()) return;
 
       //JAMES: Refresh the entity's bounding box.
       ent.updateBoundingBox();
@@ -102,13 +101,11 @@ export default class Wall extends Entity {
         ent.model.position.add(normal.clone().multiplyScalar(pushDist));
         ent.position.copy(ent.model.position);
 
-        //JAMES: Update its bounding box so we don't get stuck next frame.
         ent.updateBoundingBox();
       }
     });
   }
 
-  //JAMES: Static walls don't need dynamic per‑frame logic beyond collisions.
   //JAMES: Rotation helpers:
   rotateX90() {
     this.model.rotation.x += Math.PI / 2;
