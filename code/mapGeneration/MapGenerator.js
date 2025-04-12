@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { Tile } from "/mapGeneration/Tile.js";
 import { NoiseGenerator } from "/mapGeneration/NoiseGenerator.js";
+import { floor } from "three/tsl";
 //import { MapValidator } from '/mapGeneration/MapValidator.js';
 
 // Handles creation of maps
@@ -9,8 +10,8 @@ export default class MapGenerator {
     // Level generator params
     this.seed = seed;
     this.level = level; // level (1-3) determines map topography and enemy distributions
-    this.length = 17; // MUST BE ODD
-    this.width = 17; // MUST BE ODD
+    this.length = 39; // MUST BE ODD
+    this.width = 39; // MUST BE ODD
     this.maxHeight = 5;
 
     // Array that stores generated level, this is what will be returned. Vector3 coord is index
@@ -40,17 +41,14 @@ export default class MapGenerator {
   // Generates the map and returns it as a Map indexed by Vector3 coords.
   generateMap(
     level = 1,
-    roomNumIn = 4,
-    roomMinDimIn = 3,
-    roomMaxDimIn = 6,
     stair1 = 1,
     stair2 = 0,
-    stair3 = 0,
+    stair3 = 0
   ) {
-    const roomNum = roomNumIn;
-    const roomMinDim = roomMinDimIn;
-    const roomMaxDim = roomMaxDimIn;
-
+    const roomNum = floor( Math.random() * 7);
+    const roomMinDim = floor( Math.random() * 5);
+    const roomMaxDim = (floor( Math.random() * 10)+roomMinDim);
+    
     // These modify tileArray to create the level layout
     this.generateWalls();
     this.generateRooms(roomNum, roomMinDim, roomMaxDim);
