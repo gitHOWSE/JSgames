@@ -24,6 +24,8 @@ class Vacuum extends Entity {
     //JAMES: Call the parent constructor with params object
     super(params);
 
+    this.isMovable = true;
+    this.setMovable(true);
     this.is_robot = true;
     this.is_hackable = true;
 

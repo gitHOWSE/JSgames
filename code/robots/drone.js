@@ -29,12 +29,13 @@ class Drone extends Entity {
     //JAMES: Call the parent constructor for base initialization.
     super(params);
 
+    this.isMovable = true;
+    this.setMovable(true);
     //JAMES: Mark as a robot that can be hacked.
     this.is_robot = true;
     this.is_hackable = true;
     //JAMES: This drone has legs (or equivalent mobility) so it can handle steps.
     this.has_legs = true;
-
     //JAMES: Set the drone's position.
     if (params.position instanceof THREE.Vector3) {
       this.position.copy(params.position);

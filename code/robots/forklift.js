@@ -23,6 +23,7 @@ class Forklift extends Entity {
     //JAMES: Delete any provided model so that the parent's constructor creates a fresh Group.
     delete params.model;
 
+    this.setMovable(true);
     //JAMES: Call the Entity constructor.
     super(params);
 
@@ -30,6 +31,7 @@ class Forklift extends Entity {
     this.is_robot = true;
     this.is_hackable = true;
 
+    this.isMovable = true;
     //JAMES: Set initial position.
     if (params.position instanceof THREE.Vector3) {
       this.position.copy(params.position);

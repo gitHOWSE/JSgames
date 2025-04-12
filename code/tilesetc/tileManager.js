@@ -102,15 +102,12 @@ export class TileManager {
    * @param {number} delta — Time elapsed since the last frame.
    */
   update(delta) {
-    //JAMES: Increment the frame counter.
     this.frameCount++;
+    if (this.frameCount % this.updateIntervalFrames !== 0) return;
 
-    //JAMES: Throttle tile updates so that update(delta) is only called every updateIntervalFrames frames.
-    if (this.frameCount % this.updateIntervalFrames !== 0) {
-      return;
-    }
+    const ramps = this.getTiles("Ramp");
+    console.log(`//JAMES: TileManager updating ${ramps.length} ramps...`);
 
-    //JAMES: Call update(delta) on each tile.
     for (const tile of this.tiles) {
       if (tile && typeof tile.update === "function") {
         tile.update(delta);
