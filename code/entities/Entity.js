@@ -26,6 +26,7 @@ export class Entity {
     this.prevPosition = this.position.clone();
 
     //JAMES: Movement and carried item
+    this.isCollided = false;
     this.isMovable = true;
     this.movement = params.movement || new Movement();
     this.item = params.item || new Item();
@@ -128,7 +129,7 @@ export class Entity {
       // skip all movement, hacking, etc. while frozen
       return;
     }
-    if (this === window.player && window.controller) {
+    if (this === window.player && window.controller && !this.getCollided()) {
       this.movement.updateFromInput(window.controller, this, delta);
       this.movement.updateAngular(delta);
 
@@ -200,6 +201,9 @@ export class Entity {
   getTag() {
     return this.tag;
   }
+  getCollided() {
+    return this.isCollided;
+  }
   isRobot() {
     return this.is_robot;
   }
@@ -235,6 +239,9 @@ export class Entity {
   }
   setMovable(t) {
     this.isMovable = t;
+  }
+  setCollided(t) {
+    this.isCollided = t;
   }
   heal(h) {
     this.health = Math.min(this.max_health, this.health + h);

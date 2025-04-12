@@ -16,11 +16,11 @@ class Vacuum extends Entity {
     params.name = "vacuum";
     params.health = 100;
     params.armor = 60;
-    params.movement = new Movement("wheels", 10, 1);
+    params.movement = new Movement("wheels", 5, 1);
     params.item = new Item();
 
     //JAMES: Turning and force.
-    params.movement.turningAccelerationFactor = 100;
+    params.movement.turningAccelerationFactor = 50;
     //JAMES: Call the parent constructor with params object
     super(params);
 

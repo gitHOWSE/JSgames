@@ -47,8 +47,8 @@ export async function setupLevel(level = 1) {
       for (let z = 0; z < width; z++) {
         const tile = tileArray[x][y][z];
         const type = tile.getType();
-        const facing = tile.getFacing();
-
+        let facing = tile.getFacing();
+        console.log(type.toString(), "Facing", facing.toString());
         // JAMES: Compute world position for grid tile so that the map is centered.
         const worldX = (x - mapHalfX) * TILE_SIZE_XZ;
         const worldZ = (z - mapHalfZ) * TILE_SIZE_XZ;
@@ -63,6 +63,27 @@ export async function setupLevel(level = 1) {
               z: worldZ,
               story: storyY,
             });
+            if (typeof instance.setOrientationNorth === "function") {
+              facing = Math.floor(Math.random() * 3);
+              switch (facing) {
+                case 0:
+                  instance.setOrientationNorth();
+                  break;
+                case 1:
+                  instance.setOrientationWest();
+                  break;
+                case 2:
+                  instance.setOrientationSouth();
+                  break;
+                case 3:
+                  instance.setOrientationEast();
+                  break;
+                default:
+                  instance.model.rotation.y = facing * (Math.PI / 2);
+              }
+            } else {
+              instance.model.rotation.y = facing * (Math.PI / 2);
+            }
             break;
 
           case "floor":
@@ -72,6 +93,27 @@ export async function setupLevel(level = 1) {
               z: worldZ,
               story: storyY,
             });
+            if (typeof instance.setOrientationNorth === "function") {
+              facing = Math.floor(Math.random() * 3);
+              switch (facing) {
+                case 0:
+                  instance.setOrientationNorth();
+                  break;
+                case 1:
+                  instance.setOrientationWest();
+                  break;
+                case 2:
+                  instance.setOrientationSouth();
+                  break;
+                case 3:
+                  instance.setOrientationEast();
+                  break;
+                default:
+                  instance.model.rotation.y = facing * (Math.PI / 2);
+              }
+            } else {
+              instance.model.rotation.y = facing * (Math.PI / 2);
+            }
             break;
 
           case "ramp":
@@ -111,7 +153,26 @@ export async function setupLevel(level = 1) {
               z: worldZ,
               story: storyY,
             });
-            instance.model.rotation.y = facing * (Math.PI / 2);
+            if (typeof instance.setOrientationNorth === "function") {
+              switch (facing) {
+                case 0:
+                  instance.setOrientationNorth();
+                  break;
+                case 1:
+                  instance.setOrientationWest();
+                  break;
+                case 2:
+                  instance.setOrientationSouth();
+                  break;
+                case 3:
+                  instance.setOrientationEast();
+                  break;
+                default:
+                  instance.model.rotation.y = facing * (Math.PI / 2);
+              }
+            } else {
+              instance.model.rotation.y = facing * (Math.PI / 2);
+            }
             break;
 
           // JAMES: Skip other types (e.g. "air").

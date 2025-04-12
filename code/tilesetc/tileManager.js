@@ -106,7 +106,6 @@ export class TileManager {
     if (this.frameCount % this.updateIntervalFrames !== 0) return;
 
     const ramps = this.getTiles("Ramp");
-    console.log(`//JAMES: TileManager updating ${ramps.length} ramps...`);
 
     for (const tile of this.tiles) {
       if (tile && typeof tile.update === "function") {

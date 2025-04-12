@@ -18,7 +18,7 @@ export class Movement {
   //JAMES: Base turning acceleration factor (set per entity).
   turningAccelerationFactor = 18.0;
   //JAMES: Constant to damp turning effectiveness at high speeds.
-  turningSpeedDampening = 0.5;
+  turningSpeedDampening = 0.3;
 
   //JAMES: Flag to indicate whether turning input is active.
   isTurning = false;

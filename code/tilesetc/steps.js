@@ -132,19 +132,15 @@ export default class Ramp extends Entity {
 
   // JAMES: Orientation methods to set the ramp's facing direction.
   setOrientationNorth() {
-    // Ramp slopes toward world negative Z.
     this.model.rotation.y = 0;
   }
   setOrientationEast() {
-    // Ramp slopes toward world positive X.
     this.model.rotation.y = Math.PI / 2;
   }
   setOrientationSouth() {
-    // Ramp slopes toward world positive Z.
     this.model.rotation.y = Math.PI;
   }
   setOrientationWest() {
-    // Ramp slopes toward world negative X.
     this.model.rotation.y = -Math.PI / 2;
   }
 }

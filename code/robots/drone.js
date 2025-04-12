@@ -19,12 +19,11 @@ class Drone extends Entity {
   constructor(params = {}) {
     //JAMES: Set up required properties for the drone.
     params.name = "drone";
-    params.health = 120; //JAMES: Adjusted health value.
-    params.armor = 80; //JAMES: Adjusted armor value.
-    params.movement = new Movement("wheels", 12, 1); //JAMES: Slightly faster top speed than the vacuum.
+    params.health = 120;
+    params.armor = 80;
+    params.movement = new Movement("wheels", 25, 3); //JAMES: Slightly faster top speed than the vacuum.
     params.item = new Item();
-    //JAMES: Lower turning acceleration factor than the vacuum.
-    params.movement.turningAccelerationFactor = 80;
+    params.movement.turningAccelerationFactor = 50;
 
     //JAMES: Call the parent constructor for base initialization.
     super(params);

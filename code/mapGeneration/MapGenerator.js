@@ -38,17 +38,24 @@ export default class MapGenerator {
   }
 
   // Generates the map and returns it as a Map indexed by Vector3 coords.
-  generateMap(level = 1) {
-    // TODO: tidy method to get parameters for level
-    const roomNum = 4;
-    const roomMinDim = 3;
-    const roomMaxDim = 6;
+  generateMap(
+    level = 1,
+    roomNumIn = 4,
+    roomMinDimIn = 3,
+    roomMaxDimIn = 6,
+    stair1 = 1,
+    stair2 = 0,
+    stair3 = 0,
+  ) {
+    const roomNum = roomNumIn;
+    const roomMinDim = roomMinDimIn;
+    const roomMaxDim = roomMaxDimIn;
 
     // These modify tileArray to create the level layout
     this.generateWalls();
     this.generateRooms(roomNum, roomMinDim, roomMaxDim);
     this.generateFloors(level);
-    this.generateStairsRamps(1, 0, 0);
+    this.generateStairsRamps(stair1, stair2, stair3);
   }
 
   dfs(array, x, z) {
@@ -371,4 +378,3 @@ export default class MapGenerator {
     return levelGeo;
   }
 }
-

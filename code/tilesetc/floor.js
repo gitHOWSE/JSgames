@@ -121,7 +121,18 @@ export default class Floor extends Entity {
   rotateZ90() {
     this.model.rotation.z += Math.PI / 2;
   }
-
+  setOrientationNorth() {
+    this.model.rotation.y = 0;
+  }
+  setOrientationEast() {
+    this.model.rotation.y = Math.PI / 2;
+  }
+  setOrientationSouth() {
+    this.model.rotation.y = Math.PI;
+  }
+  setOrientationWest() {
+    this.model.rotation.y = -Math.PI / 2;
+  }
   //JAMES: Returns the current world-space dimensions of the floor.
   getDimensions() {
     const bbox = new THREE.Box3().setFromObject(this.model);
