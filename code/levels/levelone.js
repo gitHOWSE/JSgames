@@ -21,7 +21,7 @@ export let playerForklift = null;
  */
 export async function startLevelOne() {
   // JAMES: Set up the procedural level.
-  await setupLevel(1);
+  //  await setupLevel(1);
 
   // JAMES: Spawn the player forklift at (0, 0, 0).
   playerForklift = await createForklift(new THREE.Vector3(0, 0, 0));

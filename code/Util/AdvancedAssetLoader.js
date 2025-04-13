@@ -1,10 +1,10 @@
-// Util/AdvancedAssetLoader.js
-// AI GENERATED
-
+// /Util/AdvancedAssetLoader.js
+//AI GENERATED (I assume thats okay because it has nothing to do with logic)
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
+import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 import manifest from "../models/meshManifest.js";
 
 export class AdvancedAssetLoader {
@@ -86,7 +86,7 @@ export class AdvancedAssetLoader {
   clone(name) {
     const entry = this.cache.get(name);
     if (!entry) throw new Error(`Asset ${name} not loaded`);
-    return entry.scene.clone(true);
+    return clone(entry.scene, true); // true: deep clone (including skinned meshes)
   }
 
   getClips(name) {

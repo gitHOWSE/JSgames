@@ -157,6 +157,9 @@ export class Entity {
     ) {
       this.updateForklift(delta);
     }
+    if (this.mixer) {
+      this.mixer.update(delta);
+    }
 
     //JAMES: Friction & linear integration (common to both player & AI)
     this.movement.applyFriction();
