@@ -86,13 +86,9 @@ export default class Ramp extends Entity {
     for (const entity of entities) {
       if (entity.id === this.id) continue;
       if (!entity.getMovable()) continue;
-      console.log(`//JAMES: Checking entity ${entity.id}`);
 
       // JAMES: Convert the entity's world position to the ramp's local space.
       const localEntityPos = this.model.worldToLocal(entity.position.clone());
-      console.log(
-        `//JAMES: Entity ${entity.id} local pos: (${localEntityPos.x.toFixed(2)}, ${localEntityPos.y.toFixed(2)}, ${localEntityPos.z.toFixed(2)})`,
-      );
 
       // JAMES: Check if the entity is within the ramp's XZ footprint.
       if (
@@ -101,9 +97,6 @@ export default class Ramp extends Entity {
         localEntityPos.z >= normalizedBox.min.z &&
         localEntityPos.z <= normalizedBox.max.z
       ) {
-        console.log(
-          `//JAMES: Entity ${entity.id} is within the ramp's footprint.`,
-        );
         // JAMES: Compute interpolation factor (t) along the ramp's local Z axis.
         const t =
           (localEntityPos.z - normalizedBox.min.z) /
@@ -125,7 +118,6 @@ export default class Ramp extends Entity {
           `//JAMES: Entity ${entity.id} on ramp: t=${t.toFixed(2)}, newLocalY=${newLocalY.toFixed(2)}, worldY=${newWorldY.toFixed(2)}`,
         );
       } else {
-        console.log(`//JAMES: Entity ${entity.id} not within ramp footprint.`);
       }
     }
   }

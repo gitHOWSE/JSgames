@@ -3,9 +3,7 @@ import * as THREE from "three";
 import { Movement } from "./Movement.js";
 import { Item } from "./Items.js";
 import checkHacks from "../robots/hax.js";
-
 import { WanderBehaviour } from "../robots/behaviours.js";
-
 export class Entity {
   static nextId = 0;
 
@@ -151,6 +149,13 @@ export class Entity {
       this.movement.acceleration.add(
         steer.clampLength(0, this.movement.maxForce),
       );
+    }
+    // JAMES: If this entity is a forklift and has an updateForklift function, call it.
+    if (
+      this.getTag() === "forklift" &&
+      typeof this.updateForklift === "function"
+    ) {
+      this.updateForklift(delta);
     }
 
     //JAMES: Friction & linear integration (common to both player & AI)

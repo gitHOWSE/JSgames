@@ -7,7 +7,6 @@ import entityManager from "../entities/EntityManager.js";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
 
 //JAMES: Configuration for each low‑poly on‑wall asset.
-//      Tweak scale & optional offsetY per model for best fit.
 const LOWPOLY_ONWALL_CONFIG = {
   accessTerminalLow: { scale: new THREE.Vector3(1.5, 1.5, 1.5), offsetY: 0.5 },
   espressoDreamerLow: { scale: new THREE.Vector3(1.5, 1.5, 1.5), offsetY: 0.5 },
@@ -21,7 +20,7 @@ const DEFAULT_SCALE = new THREE.Vector3(1, 1, 1);
 
 export class OnwallLow extends Entity {
   /**
-   * @param {string} assetName  — key in meshManifest
+   * @param {string} assetName   key in meshManifest
    * @param {THREE.Vector3} position
    * @param {THREE.Scene} scene
    */

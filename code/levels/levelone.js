@@ -3,38 +3,52 @@
 
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
-
 import { cameraManager } from "../Util/Camera.js";
-import { createDrone } from "../robots/drone.js";
+import { createForklift } from "../robots/forklift.js";
 import { updateStats } from "../player/stats.js";
 import checkHacks from "../robots/hax.js";
-
 // Import the new level setup helpers (assumes levelSetup.js exports these)
 import { setupLevel, updateLevelTiles, findNearestTile } from "./levelSetup.js";
 
-export let playerDrone = null;
+// JAMES: Declare the playerForklift variable so we can use it in the level.
+export let playerForklift = null;
 
-// JAMES: Setup level using levelSetup functions.
+/**
+ * startLevelOne
+ * —————————
+ * Sets up the level by generating the procedural map and then spawning
+ * the player-controlled forklift at the origin.
+ */
 export async function startLevelOne() {
-  // Generate the procedural map for level 1.
+  // JAMES: Set up the procedural level.
   await setupLevel(1);
 
-  // Spawn the player drone at a chosen spawn point.
-  // For example, use findNearestTile (if implemented) to pick a spawn location.
-  // Here, we simply use the origin.
-  const spawnPos = new THREE.Vector3(0, 0, 0);
-  playerDrone = await createDrone(spawnPos);
-  playerDrone.makePlayer();
-  cameraManager.scene.add(playerDrone.model);
+  // JAMES: Spawn the player forklift at (0, 0, 0).
+  playerForklift = await createForklift(new THREE.Vector3(0, 0, 0));
+  playerForklift.makePlayer();
+  cameraManager.scene.add(playerForklift.model);
 }
 
-// JAMES: Update level components every frame.
+/**
+ * updateLevelOne
+ * —————————
+ * Called each frame from the main loop. Processes hack input, updates HUD,
+ * updates the player forklift, updates tiles via tileManager, and renders the scene.
+ * @param {number} delta – Time elapsed since the last frame.
+ */
 export function updateLevelOne(delta) {
-  if (playerDrone) checkHacks(playerDrone);
-  updateStats();
-  if (playerDrone && playerDrone.update) playerDrone.update(delta);
+  // JAMES: Process hack input on the player-controlled forklift.
+  if (playerForklift) checkHacks(playerForklift);
 
-  // Update tiles with throttling via tileManager.
+  // JAMES: Refresh the HUD (using HP as battery and current RAM).
+  updateStats();
+
+  // JAMES: Update the player forklift.
+  if (playerForklift && playerForklift.update) {
+    playerForklift.update(delta);
+  }
+
+  // JAMES: Throttled update of all registered tiles.
   updateLevelTiles(delta);
 
   ThreeMeshUI.update();
