@@ -4,11 +4,18 @@
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
 import { cameraManager } from "../Util/Camera.js";
+import { createVacuum } from "../robots/vacuum.js";
+
 import { createForklift } from "../robots/forklift.js";
 import { updateStats } from "../player/stats.js";
 import checkHacks from "../robots/hax.js";
-// Import the new level setup helpers (assumes levelSetup.js exports these)
+import MapGenerator  from "../mapGeneration/MapGenerator.js" ;
+
 import { setupLevel, updateLevelTiles, findNearestTile } from "./levelSetup.js";
+import { Turret } from "../robots/turret.js";
+import { Entity } from "../entities/Entity.js";
+import entityManagerInstance from "../entities/EntityManager.js";
+import { and } from "three/tsl";
 
 // JAMES: Declare the playerForklift variable so we can use it in the level.
 export let playerForklift = null;
@@ -21,10 +28,21 @@ export let playerForklift = null;
  */
 export async function startLevelOne() {
   // JAMES: Set up the procedural level.
-  //  await setupLevel(1);
+  //await setupLevel(1);
+  //let mapGen = new MapGenerator(1);
+  //cameraManager.scene.add(mapGen.generateDebug());
 
-  // JAMES: Spawn the player forklift at (0, 0, 0).
-  playerForklift = await createForklift(new THREE.Vector3(0, 0, 0));
+  playerForklift = await createVacuum(new THREE.Vector3(3, 0, 0));
+
+  let trt = new Turret({
+    scene: cameraManager.scene,
+    position: new THREE.Vector3(6, 0, 6)
+  });
+  entityManagerInstance.addEntity(trt);
+  cameraManager.scene.add(trt.model);
+  
+
+  // JAMES: Make the player-controlled forklift a player-controlled object.
   playerForklift.makePlayer();
   cameraManager.scene.add(playerForklift.model);
 }
@@ -48,8 +66,13 @@ export function updateLevelOne(delta) {
     playerForklift.update(delta);
   }
 
+  console.log("Updating LevelOne")
+
   // JAMES: Throttled update of all registered tiles.
   updateLevelTiles(delta);
+  for (const e of entityManagerInstance.getEntities()) {
+    if ((typeof e.update === "function") ) e.update(delta);
+  }
 
   ThreeMeshUI.update();
   cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);

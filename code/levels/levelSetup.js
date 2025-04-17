@@ -52,7 +52,7 @@ export async function setupLevel(level = 1) {
         // JAMES: Compute world position for grid tile so that the map is centered.
         const worldX = (x - mapHalfX) * TILE_SIZE_XZ;
         const worldZ = (z - mapHalfZ) * TILE_SIZE_XZ;
-        const storyY = y; // Each tile class interprets the story value for its Y position.
+        const storyY = y;
 
         let instance = null;
         switch (type) {

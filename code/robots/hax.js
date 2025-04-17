@@ -95,7 +95,7 @@ export default function checkHacks(playerEntity) {
         target.movement.acceleration.set(0, 0, 0);
         setTimeout(() => {
           target.isFrozen = false;
-        }, 10000);
+        }, 90000);
       }
 
       break; //JAMES: Hack only one entity per key press.

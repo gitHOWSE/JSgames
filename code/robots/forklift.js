@@ -18,7 +18,7 @@ class Forklift extends Entity {
     params.movement = new Movement("wheels", 8, 1);
     params.item = new Item();
     params.movement.turningAccelerationFactor = 5;
-    delete params.model;
+    delete params.model; // ensure new model is created
 
     super(params);
     this.setMovable(true);
@@ -39,7 +39,7 @@ class Forklift extends Entity {
       this.mesh.rotation.y = -Math.PI / 2;
     }
 
-    // JAMES: Set initial AI state (guard state for non–player control).
+    // JAMES: Set initial AI state.
     this.state = new GuardState(this, {
       circleDistance: 2,
       circleRadius: 1,
@@ -47,20 +47,20 @@ class Forklift extends Entity {
     });
 
     // JAMES: Initialize mode properties.
-    this.mode = "forklift"; // possible values: "forklift" or "transformer"
+    this.mode = "forklift"; // can be 'forklift' or 'transformer'
     this.lastModeToggleTime = 0;
-    this.modeToggleCooldown = 1000; // ms
+    this.modeToggleCooldown = 1000; // in ms
     this.inTransition = false;
     this.currentAction = null; // persistent animation action
+    this.animationTime = 0;   // persistent animation time
 
-    // JAMES: Save the original forklift mesh for later reversion.
+    // JAMES: Save original forklift mesh and preload transformer mesh.
     this.forkliftMesh = this.mesh ? this.mesh.clone() : null;
-    // JAMES: Preload the transformer mesh.
     this.transformerMesh = assetLoader.clone("transformer");
 
-    // JAMES: Define scaling variables.
+    // JAMES: Define scaling vectors.
     this.forkliftScale = new THREE.Vector3(5, 5, 5);
-    this.transformerScale = new THREE.Vector3(5, 5, 5); // adjust as needed
+    this.transformerScale = new THREE.Vector3(5, 5, 5); // adjust if needed
 
     // JAMES: Set forklift-specific parameters.
     this._setForkliftParameters();
@@ -81,13 +81,10 @@ class Forklift extends Entity {
     this.armor = 50;
   }
 
-  // JAMES: Toggle mode if the altMovement key is pressed.
+  // JAMES: Toggle mode when altMovement is pressed.
   toggleMode() {
     const now = performance.now();
-    if (
-      now - this.lastModeToggleTime < this.modeToggleCooldown ||
-      this.inTransition
-    )
+    if (now - this.lastModeToggleTime < this.modeToggleCooldown || this.inTransition)
       return;
     if (this.mode === "forklift") {
       this.convertToTransformer();
@@ -108,7 +105,6 @@ class Forklift extends Entity {
     const ariseMesh = assetLoader.clone("forkliftUp");
     this.mesh = ariseMesh;
     this.model.add(this.mesh);
-
     const tempMixer = new THREE.AnimationMixer(this.mesh);
     const clips = assetLoader.getClips("forkliftUp");
     if (!clips || clips.length === 0) {
@@ -124,7 +120,6 @@ class Forklift extends Entity {
 
     tempMixer.addEventListener("finished", () => {
       this.model.remove(this.mesh);
-      // JAMES: Swap to the transformer mesh.
       this.mesh = this.transformerMesh.clone();
       this.mesh.scale.copy(this.transformerScale);
       this.model.add(this.mesh);
@@ -132,6 +127,7 @@ class Forklift extends Entity {
       this.mode = "transformer";
       this.inTransition = false;
       this.currentAction = null;
+      this.animationTime = 0; // reset persistent animation time
       console.log("//JAMES: transformer mode active.");
     });
     this.mixer = tempMixer;
@@ -148,7 +144,6 @@ class Forklift extends Entity {
     const ariseMesh = assetLoader.clone("forkliftUp");
     this.mesh = ariseMesh;
     this.model.add(this.mesh);
-
     const tempMixer = new THREE.AnimationMixer(this.mesh);
     const clips = assetLoader.getClips("forkliftUp");
     if (!clips || clips.length === 0) {
@@ -166,7 +161,6 @@ class Forklift extends Entity {
 
     tempMixer.addEventListener("finished", () => {
       this.model.remove(this.mesh);
-      // JAMES: Swap back to the original forklift mesh.
       this.mesh = this.forkliftMesh.clone();
       this.mesh.scale.copy(this.forkliftScale);
       this.model.add(this.mesh);
@@ -174,48 +168,56 @@ class Forklift extends Entity {
       this.mode = "forklift";
       this.inTransition = false;
       this.currentAction = null;
+      this.animationTime = 0; // reset persistent animation time
       console.log("//JAMES: forklift mode active.");
     });
     this.mixer = tempMixer;
   }
 
-  // JAMES: Update persistent mode animations based on current speed.
+  // JAMES: Update the forklift's mode animations based on current speed.
   updateForkliftMode(delta) {
+    // Check for mode toggle input.
     if (window.controller?.isControlActive("altMovement")) {
       this.toggleMode();
     }
     if (!this.inTransition) {
       const currentSpeed = this.movement.velocity.length();
-      let action;
+      let desiredClip;
       if (this.mode === "transformer") {
+        // Use running or walking animation based on speed.
         if (currentSpeed > 5) {
-          const runClips = assetLoader.getClips("forkliftRunning");
-          if (runClips && runClips.length > 0) {
-            action = this.mixer.clipAction(runClips[0]);
-          }
+          this.mesh  = assetLoader.clone("forkliftRunning")
+          desiredClip = assetLoader.getClips("forkliftRunning")[0];
         } else {
-          const walkClips = assetLoader.getClips("forkliftWalking");
-          if (walkClips && walkClips.length > 0) {
-            action = this.mixer.clipAction(walkClips[0]);
-          }
+          this.mesh  = assetLoader.clone("forkliftWalking")
+          desiredClip = assetLoader.getClips("forkliftWalking")[0];
+        }
+      } else if (this.mode === "forklift") {
+        if (currentSpeed > 5) {
+          desiredClip = assetLoader.getClips("forkliftWalking")[0];
         }
       } else {
-        const walkClips = assetLoader.getClips("forkliftWalking");
-        if (walkClips && walkClips.length > 0) {
-          action = this.mixer.clipAction(walkClips[0]);
-        }
+        desiredClip = assetLoader.getClips("forkliftWalking")[0];
       }
-      if (action && this.currentAction !== action) {
-        if (this.currentAction) {
-          this.currentAction.stop();
+
+      if (desiredClip) {
+        const action = this.mixer.clipAction(desiredClip);
+        if (this.currentAction !== action) {
+          if (this.currentAction) {
+            this.currentAction.stop();
+          }
+          action.setLoop(THREE.LoopRepeat);
+          // Do not call play() every frame—play it once when switching.
+          if (!this.currentAction) {
+            action.play();
+          }
+          this.currentAction = action;
         }
-        action.setLoop(THREE.LoopRepeat);
-        action.play();
-        this.currentAction = action;
-      }
-      if (this.currentAction) {
-        // JAMES: Adjust timescale based on current speed.
-        this.currentAction.timeScale = currentSpeed / 8;
+        // JAMES: Update persistent animation time.
+        this.animationTime += delta * (currentSpeed / 8);
+        // Ensure we do not restart the clip if it's already playing.
+        this.currentAction.time = this.animationTime % desiredClip.duration;
+        console.log(`//JAMES: Current animation time: ${this.currentAction.time.toFixed(2)}`);
       }
     }
     if (this.mixer) {
@@ -234,7 +236,7 @@ export async function createForklift(position) {
   try {
     await assetLoader.load(
       "forklift",
-      "/models/robots/forklift_bot_0404141540_texture.glb",
+      "/models/robots/forklift_bot_0404141540_texture.glb"
     );
     const forkliftModel = assetLoader.clone("forklift");
     if (!forkliftModel) throw new Error("Forklift model not found.");
@@ -246,8 +248,7 @@ export async function createForklift(position) {
     forkliftModel.position.y = bbox.min.y;
 
     const forklift = new Forklift({
-      position:
-        position instanceof THREE.Vector3 ? position : new THREE.Vector3(),
+      position: position instanceof THREE.Vector3 ? position : new THREE.Vector3(),
       mesh: forkliftModel,
     });
 

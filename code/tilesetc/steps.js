@@ -77,9 +77,9 @@ export default class Ramp extends Entity {
     const localBox = new THREE.Box3(normMin, normMax);
 
     // JAMES: Log the normalized local bounding box.
-    console.log(
-      `//JAMES: Normalized LocalBBox: min=(${localBox.min.x.toFixed(2)}, ${localBox.min.y.toFixed(2)}, ${localBox.min.z.toFixed(2)}), max=(${localBox.max.x.toFixed(2)}, ${localBox.max.y.toFixed(2)}, ${localBox.max.z.toFixed(2)})`,
-    );
+   // console.log(
+     // `//JAMES: Normalized LocalBBox: min=(${localBox.min.x.toFixed(2)}, ${localBox.min.y.toFixed(2)}, ${localBox.min.z.toFixed(2)}), max=(${localBox.max.x.toFixed(2)}, ${localBox.max.y.toFixed(2)}, ${localBox.max.z.toFixed(2)})`,
+ //   );
 
     // JAMES: Iterate over all entities from the manager.
     const entities = entityManager.getEntities();
@@ -89,9 +89,9 @@ export default class Ramp extends Entity {
 
       // JAMES: Convert the entity's world position to the ramp’s local space.
       const localEntityPos = this.model.worldToLocal(entity.position.clone());
-      console.log(
-        `//JAMES: Entity ${entity.id} local pos: (${localEntityPos.x.toFixed(2)}, ${localEntityPos.y.toFixed(2)}, ${localEntityPos.z.toFixed(2)})`,
-      );
+     // console.log(
+       // `//JAMES: Entity ${entity.id} local pos: (${localEntityPos.x.toFixed(2)}, ${localEntityPos.y.toFixed(2)}, ${localEntityPos.z.toFixed(2)})`,
+     // );
 
       // JAMES: Check if the entity is inside the ramp's XZ footprint.
       if (
@@ -101,7 +101,7 @@ export default class Ramp extends Entity {
         localEntityPos.z <= localBox.max.z
       ) {
         console.log(
-          `//JAMES: Entity ${entity.id} is within the ramp's footprint.`,
+        `//JAMES: Entity ${entity.id} is within the ramp's footprint.`,
         );
         // JAMES: Compute interpolation factor along the local Z axis.
         const t =
@@ -121,11 +121,9 @@ export default class Ramp extends Entity {
 
         // JAMES: Apply the Y adjustment.
         entity.position.y = newWorldY;
-        console.log(
-          `//JAMES: Entity ${entity.id} on ramp: t=${t.toFixed(2)}, newLocalY=${newLocalY.toFixed(2)}, worldY=${newWorldY.toFixed(2)}`,
-        );
+    
       } else {
-        console.log(`//JAMES: Entity ${entity.id} not within ramp footprint.`);
+       // console.log(`//JAMES: Entity ${entity.id} not within ramp footprint.`);
       }
     }
   }

@@ -41,19 +41,19 @@ export default class MapGenerator {
   // Generates the map and returns it as a Map indexed by Vector3 coords.
   generateMap(
     level = 1,
-    stair1 = 1,
-    stair2 = 0,
-    stair3 = 0
+    ramp = 1,
+    stair = 1,
+    cliff = 1
   ) {
-    const roomNum = floor( Math.random() * 7);
-    const roomMinDim = floor( Math.random() * 5);
+    const roomNum = floor( Math.random() * 7 +2);
+    const roomMinDim = floor( Math.random() * 5 + 5);
     const roomMaxDim = (floor( Math.random() * 10)+roomMinDim);
     
     // These modify tileArray to create the level layout
     this.generateWalls();
     this.generateRooms(roomNum, roomMinDim, roomMaxDim);
     this.generateFloors(level);
-    this.generateStairsRamps(stair1, stair2, stair3);
+    this.generateStairsRamps(ramp, stair, cliff);
   }
 
   dfs(array, x, z) {
@@ -323,8 +323,7 @@ export default class MapGenerator {
   }
 
   // DEBUG: creates a mesh based on the map for visualisation
-  generateDebug() {
-    this.generateMap();
+  generateDebug() {   this.generateMap();
 
     const scale = 1;
     const wallGeo = new THREE.BoxGeometry(scale, scale, scale);

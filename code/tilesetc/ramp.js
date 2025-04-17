@@ -75,9 +75,9 @@ export default class Ramp extends Entity {
     const normalizedBox = new THREE.Box3(normalizedMin, normalizedMax);
 
     // JAMES: Debug: Log normalized bounding box.
-    console.log(
-      `//JAMES: Normalized LocalBBox: min=(${normalizedBox.min.x.toFixed(2)}, ${normalizedBox.min.y.toFixed(2)}, ${normalizedBox.min.z.toFixed(2)}), max=(${normalizedBox.max.x.toFixed(2)}, ${normalizedBox.max.y.toFixed(2)}, ${normalizedBox.max.z.toFixed(2)})`,
-    );
+   // console.log(
+     // `//JAMES: Normalized LocalBBox: min=(${normalizedBox.min.x.toFixed(2)}, ${normalizedBox.min.y.toFixed(2)}, ${normalizedBox.min.z.toFixed(2)}), max=(${normalizedBox.max.x.toFixed(2)}, ${normalizedBox.max.y.toFixed(2)}, ${normalizedBox.max.z.toFixed(2)})`,
+   // );
 
     // JAMES: Get all entities from the EntityManager.
     const entities = entityManager.getEntities();
@@ -114,9 +114,9 @@ export default class Ramp extends Entity {
 
         // JAMES: Adjust the entity's Y position.
         entity.position.y = newWorldY;
-        console.log(
-          `//JAMES: Entity ${entity.id} on ramp: t=${t.toFixed(2)}, newLocalY=${newLocalY.toFixed(2)}, worldY=${newWorldY.toFixed(2)}`,
-        );
+//        console.log(
+  //        `//JAMES: Entity ${entity.id} on ramp: t=${t.toFixed(2)}, newLocalY=${newLocalY.toFixed(2)}, worldY=${newWorldY.toFixed(2)}`,
+    //    );
       } else {
       }
     }
