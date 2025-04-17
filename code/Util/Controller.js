@@ -27,7 +27,7 @@ class Controller {
     for (const action in this.controls) {
       const controlKey = this.controls[action];
       if (pressedKey.toLowerCase() === controlKey.toLowerCase()) {
-        console.log(`Control pressed: ${action} (Key: ${pressedKey})`);
+        //console.log(`Control pressed: ${action} (Key: ${pressedKey})`);
       }
     }
   }
@@ -39,7 +39,7 @@ class Controller {
     for (const action in this.controls) {
       const controlKey = this.controls[action];
       if (releasedKey.toLowerCase() === controlKey.toLowerCase()) {
-        console.log(`Control released: ${action} (Key: ${releasedKey})`);
+        //console.log(`Control released: ${action} (Key: ${releasedKey})`);
       }
     }
   }

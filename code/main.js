@@ -19,7 +19,7 @@ window.cameraManager = cameraManager;
 window.player = null;
 
 //JAMES: Global debug flag to toggle debugging tools.
-const DEBUG = true;
+const DEBUG = false;
 const clock = new THREE.Clock();
 
 //JAMES: Create the loading screen instance and add it to the camera early.
