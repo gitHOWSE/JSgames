@@ -1,3 +1,18 @@
+///////////////////////////////////
+//        file: MapGraph.js      //
+//      author: Steven Sproule   //
+//      e-mail: sasproule@mun.ca //
+//  student id: 201918430        //
+//     version: 1                //
+// ----------------------------- //
+// description: takes a tileArray//
+// and computes all possible     //
+// paths within it using nodes   //
+// with edges (and edgesIn),     //
+// also provides a method to     //
+// generate a vector field.      //
+///////////////////////////////////
+
 import * as THREE from 'three';
 import { MapNode } from './MapNode.js';
 import { MinHeap } from '../Util/MinHeap.js';
@@ -53,6 +68,8 @@ export class MapGraph {
         let tile = this.tileArray[x][y][z];
         let node = new MapNode(this.length(), x, z, tile, y);
         this.nodes.push(node);
+        //console.log("Node info:", this.nodes.length - 1, x, z);
+        //console.log("Function: ", this.getIndexFromCoords(x,z), x, z);
       }
     }
   }
@@ -150,8 +167,8 @@ export class MapGraph {
   }
 
 
-  getIndexFromCoords(i, j) {
-    return j*this.cols + i;
+  getIndexFromCoords(x, z) {
+    return x*this.tileArray[0][0].length + z;
   }
 
 
@@ -206,15 +223,53 @@ export class MapGraph {
     return costs;
   }
 
+
+  // Takes a set of """"goals"""" and finds the costs to get from them, rather than to
+  reverseDijkstra(goals) {
+    // Initialise Dijkstra costs map and minheap
+    let costs = new Map();
+    let heap = new MinHeap();
+
+    // Add goal nodes to map and heap
+    goals.forEach((element) => {
+      costs.set(element, 0);
+      heap.enqueue({cost: 0, node: element});
+    });
+
+    // Propagate out from goals until all accessible nodes have been visited
+    while (!heap.isEmpty()) {
+      const { cost: currentCost, node: currentNode } = heap.dequeue();
+
+      if (currentCost <= costs.get(currentNode)) {
+        for (let edge of currentNode.edges) {
+          let neighbour = edge.node;
+          let edgeCost = edge.cost;
+          let totalCost = currentCost + edgeCost;
+
+          // Update map and heap if an unexplored or cheaper path is found
+          if (costs.get(neighbour) === undefined || totalCost < costs.get(neighbour)) {
+            costs.set(neighbour, totalCost);
+            heap.enqueue({ cost: totalCost, node: neighbour });
+          }
+        }
+      }
+    }
+
+    return costs;
+  }
+
+
   // Takes an array containing the goal nodes and returns a vector field
-  setupVectorField(goals) {
+  setupVectorField(goals, reverse = false) {
     // Get costs map
-    let costs = this.multiGoalDijkstra(goals);
+    let costs = null;
+    if (reverse) costs = this.reverseDijkstra(goals);
+    else         costs = this.multiGoalDijkstra(goals);
 
     for (const node of this.nodes) {
       // Setting vector of goal nodes to zero vector
       if (goals.includes(node)) {
-        this.vectorField.set(node, new THREE.Vector3(0, 0, 0));
+        this.vectorField.set(node.id, new THREE.Vector3(0, 0, 0));
         continue;
       }
 
@@ -240,14 +295,14 @@ export class MapGraph {
       // Setting the vector to point to the goal
       if (bestNeighbour === null) {
         // No way to access goal from this node -> set vector to zero
-        this.vectorField.set(node, new THREE.Vector3(0, 0, 0));
+        this.vectorField.set(node.id, new THREE.Vector3(0, 0, 0));
       } else {
         // Can access goal from this node -> find direction to node
         let currentPos = new THREE.Vector3(node.x, 5, node.z);
         let neighbourPos = new THREE.Vector3(bestNeighbour.x, 5, bestNeighbour.z);
         let direction = neighbourPos.clone().sub(currentPos).normalize();
 
-        this.vectorField.set(node, direction);
+        this.vectorField.set(node.id, direction);
       }
     }
 

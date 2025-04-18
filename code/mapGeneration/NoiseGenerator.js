@@ -1,3 +1,16 @@
+///////////////////////////////////
+//        file: NoiseGenerator.js//
+//      author: Steven Sproule   //
+//      e-mail: sasproule@mun.ca //
+//  student id: 201918430        //
+//     version: 1                //
+// ----------------------------- //
+// description: generates a map  //
+// of noise values as floats     //
+// from 0-1 generated via        //
+// simplex noise.                //
+///////////////////////////////////
+
 import * as THREE from 'three';
 import SimplexNoise from 'simplex-noise';
 

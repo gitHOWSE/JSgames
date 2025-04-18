@@ -9,7 +9,10 @@ import { createVacuum } from "../robots/vacuum.js";
 import { createForklift } from "../robots/forklift.js";
 import { updateStats } from "../player/stats.js";
 import checkHacks from "../robots/hax.js";
-import MapGenerator  from "../mapGeneration/MapGenerator.js" ;
+import MapGenerator  from "../mapGeneration/MapGenerator.js";
+import { MapPopulator } from "../mapGeneration/MapPopulator.js";
+
+import { Navigation } from "../pathing/Navigation.js";
 
 import { setupLevel, updateLevelTiles, findNearestTile } from "./levelSetup.js";
 import { Turret } from "../robots/turret.js";
@@ -29,17 +32,25 @@ export let playerForklift = null;
 export async function startLevelOne() {
   // JAMES: Set up the procedural level.
   //await setupLevel(1);
-  //let mapGen = new MapGenerator(1);
-  //cameraManager.scene.add(mapGen.generateDebug());
+  let mapGen = new MapGenerator(1);
+  cameraManager.scene.add(mapGen.generateDebug());
+  let arr = mapGen.tileArray;
+  let mapPop = new MapPopulator(arr, 1);
+  arr = mapPop.populate();
+
+  let nav = new Navigation(arr);
+  //console.log(nav.getDirection(1,1,25,25));
 
   playerForklift = await createVacuum(new THREE.Vector3(3, 0, 0));
 
+  /*
   let trt = new Turret({
     scene: cameraManager.scene,
     position: new THREE.Vector3(6, 0, 6)
   });
   entityManagerInstance.addEntity(trt);
   cameraManager.scene.add(trt.model);
+  */
   
 
   // JAMES: Make the player-controlled forklift a player-controlled object.
@@ -66,7 +77,7 @@ export function updateLevelOne(delta) {
     playerForklift.update(delta);
   }
 
-  console.log("Updating LevelOne")
+  //console.log("Updating LevelOne")
 
   // JAMES: Throttled update of all registered tiles.
   updateLevelTiles(delta);
