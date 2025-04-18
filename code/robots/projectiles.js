@@ -4,6 +4,7 @@ import { Entity } from "../entities/Entity.js";
 import entityManager from "../entities/EntityManager.js";
 import { tileManager } from "../tilesetc/tileManager.js";
 import { getTileCenter, TILE_SIZE_XZ } from "../levels/levelSetup.js"; // JAMES: Import tile constants and helper.
+import { cameraManager } from "../Util/Camera.js";
 
 /**
  * JAMES: Straight‑line projectile fired from a turret muzzle.
@@ -31,7 +32,7 @@ export class Projectile extends Entity {
     this.age       = 0;
 
     // JAMES: Sphere radius = half‑diagonal of tile square.
-    this.damageRadius = TILE_SIZE_XZ/3 ; // Math.SQRT1_2;
+    this.damageRadius = TILE_SIZE_XZ/300000 ; // Math.SQRT1_2;
     // JAMES: Damage per entity.
     this.damageAmount = 35;
 
@@ -124,6 +125,8 @@ export class Projectile extends Entity {
 
     // JAMES: Self‑destruct once all splash damage is applied.
     this.health = 0;
+    cameraManager.scene.remove(this.mesh);
+
     this.destroy();
   }
 
