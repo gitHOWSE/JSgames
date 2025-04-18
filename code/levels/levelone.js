@@ -9,8 +9,15 @@ import { createVacuum } from "../robots/vacuum.js";
 import { createForklift } from "../robots/forklift.js";
 import { updateStats } from "../player/stats.js";
 import checkHacks from "../robots/hax.js";
+
+import MapGenerator  from "../mapGeneration/MapGenerator.js";
+import { MapPopulator } from "../mapGeneration/MapPopulator.js";
+
+import { Navigation } from "../pathing/Navigation.js";
+
 import MapGenerator  from "../mapGeneration/MapGenerator.js" ;
 import { spawnTestAnimations } from "../robots/testAnimations.js";
+
 import { setupLevel, updateLevelTiles, findNearestTile } from "./levelSetup.js";
 import { Turret } from "../robots/turret.js";
 import { Entity } from "../entities/Entity.js";
@@ -35,11 +42,13 @@ export async function startLevelOne() {
 
   player = await createVacuum(new THREE.Vector3(3, 0, 0));
 
+
   let trt = new Turret({
     scene: cameraManager.scene,
     position: new THREE.Vector3(6, 0, 6)
   });
   cameraManager.scene.add(trt.model);
+
   entityManagerInstance.addEntity(trt);
 
   const dogPos = new THREE.Vector3(-4, 0, -4);
@@ -83,7 +92,7 @@ export function updateLevelOne(delta) {
     window.testMixers.forEach((m) => m.update(delta));
   }
 
-  // console.log("Updating LevelOne")
+  //console.log("Updating LevelOne")
 
   // JAMES: Throttled update of all registered tiles.
   updateLevelTiles(delta);

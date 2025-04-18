@@ -1,40 +1,85 @@
+///////////////////////////////////
+//        file: MapGenerator.js  //
+//      author: Steven Sproule   //
+//      e-mail: sasproule@mun.ca //
+//  student id: 201918430        //
+//     version: 1                //
+// ----------------------------- //
+// description: generates a game //
+// map represented by a 3D array //
+// complete with walls, rooms,   //
+// stairs/ramps/cliffs, and      //
+// ensures its goal is reachable //
+// from its start, and far away. //
+///////////////////////////////////
+
 import * as THREE from 'three';
 import { Tile } from '/mapGeneration/Tile.js';
 import { NoiseGenerator } from '/mapGeneration/NoiseGenerator.js';
-import { GameMap } from '/pathing/GameMap.js';
 import { MapGraph } from '/pathing/MapGraph.js';
-//import { MapValidator } from '/mapGeneration/MapValidator.js';
+import { MapParams } from '/mapGeneration/MapParams.js';
+import { MapPopulator } from '/mapGeneration/MapPopulator.js';
 
 // Handles creation of maps
 export default class MapGenerator
 {
+	static FLOOR_PROPORTION = 0.6; // Average fraction of map area not taken up by walls
+	static INACCESSIBLE_ALLOWANCE = 1.25 // Fraction of map allowed to be inaccessible to starting bot
+
 	constructor(level = 1, seed = Math.random())
 	{
 		// Level generator params
 		this.seed 		= seed;
 		this.level 		= level; // level (1-3) determines map topography and enemy distributions
 		
+		this.params     = new MapParams(level); // Stores all parameters, based on level
+		
 		// Dimension params
-		this.length 	= 39; // MUST BE ODD
-		this.width 		= 39; // MUST BE ODD
-		this.maxHeight 	= 5;
+		this.length 	= this.params.getLength();
+		this.width 		= this.params.getWidth();
+		this.maxHeight 	= this.params.getMaxHeight();
 
 		// Room params
-		this.roomNum 	= 4;	// default 4
-		this.roomMinDim = 5;	// default 5
-		this.roomMaxDim = 11;	// default 11
+		this.roomNum 	= this.params.getRoomNum();	    // default 4
+		this.roomMinDim = this.params.getRoomMinDim();	// default 5
+		this.roomMaxDim = this.params.getRoomMaxDim();	// default 11
 
 		// Incline params
-		this.rampWeight  = 1;
-		this.stairWeight = 4;
-		this.cliffWeight = 5;
+		this.rampWeight  = this.params.getRampWeight();
+		this.stairWeight = this.params.getStairWeight();
+		this.cliffWeight = this.params.getCliffWeight();
 
 		// Tells pathing algorithm what kinds of terrain player is able to traverse
-		this.canStair = false;
-		this.canFly   = false;
+		this.canStair = this.params.getCanStair();
+		this.canFly   = this.params.getCanFly();
+
+		// Minimum distance from start to goal, levels shorter than this will be regenerated
+		this.minLevelLength = this.params.getMinDistance();
+
+		// Noiseparams
+		this.noiseParams = this.params.getNoiseParams();
 
 		// Array that stores generated level, this is what will be returned. Vector3 coord is index
 		this.tileArray = [];
+	}
+
+	// Generates the map and returns it as a Map indexed by Vector3 coords.
+	generateMap(announce = true)
+	{
+		if (announce) console.log("[MapGenerator] starting mapgen...");
+		this.fillTileArray();
+		// These modify tileArray to create the level layout. Initially layout is one solid wall
+		this.generateWalls();								 // Carve a labyrinth in the walls
+		this.generateRooms(this.roomNum, this.roomMinDim, this.roomMaxDim); // Add open rooms to the labyrinth
+		this.generateFloors();							 // Change floor height w/ Perlin
+		this.generateStairsRamps(this.rampWeight, this.stairWeight, this.cliffWeight); // Add stairs connecting some floors
+		this.generateGoal();
+		this.generateSpawn(this.canStair, this.canFly);
+		if (announce) console.log("[MapGenerator]",this.length,"x",this.width," mapgen complete!");
+	}
+
+	fillTileArray()
+	{
 		for (let x = 0; x < this.length; x++)
 		{
 			this.tileArray[x] = []
@@ -47,37 +92,6 @@ export default class MapGenerator
 				}
 			}
 		}
-	}
-
-	// Provides preset noise parameters for each level
-	getLevelParams(level)
-	{
-		if (level === 1) 
-		{
-			return {scale:0.01, octaves:4, persistence:0.5, lacunarity:2.0};
-		}
-
-		else if (level === 2) 
-		{
-			return {scale:0.05, octaves:5, persistence:0.6, lacunarity:1.5};
-		}
-
-		else if (level === 3)
-		{
-			return {scale:0.2, octaves:6, persistence:0.5, lacunarity:2.5};
-		}
-	}
-
-	// Generates the map and returns it as a Map indexed by Vector3 coords.
-	generateMap(level = 1)
-	{
-		// These modify tileArray to create the level layout. Initially layout is one solid wall
-		this.generateWalls();								 // Carve a labyrinth in the walls
-		this.generateRooms(this.roomNum, this.roomMinDim, this.roomMaxDim); // Add open rooms to the labyrinth
-		this.generateFloors(level);							 // Change floor height w/ Perlin
-		this.generateStairsRamps(this.rampWeight, this.stairWeight, this.cliffWeight); // Add stairs connecting some floors
-		this.generateGoal();
-		this.generateSpawn(this.canStair, this.canFly);
 	}
 
 	dfs(array, x, z)
@@ -132,7 +146,7 @@ export default class MapGenerator
 		const array = Array.from({length: this.length}, () => Array(this.width).fill('w'));
 		for (let x = 1; x < this.length; x += 2)
 		{
-			for (let z = 1; z < this.length; z += 2)
+			for (let z = 1; z < this.width; z += 2)
 			{
 				array[x][z] = 'u';
 			}
@@ -218,7 +232,7 @@ export default class MapGenerator
 		// Making heightmap
 		let noise = new NoiseGenerator(this.seed);
 		let noiseMap = noise.generateNoiseMap(
-			this.length, this.width, this.getLevelParams(this.level)
+			this.length, this.width, this.noiseParams
 			);
 
 		// Translating heightmap to tileArray
@@ -260,7 +274,7 @@ export default class MapGenerator
 								|| this.tileArray[x-1][y][z].getType() === 'air'))
 						{
 							//console.log("CHICKEN JOCKEY!");
-							this.tileArray[x][y][z] = new Tile('air');
+							this.tileArray[x][y][z] = new Tile('cliff');
 						}
 					}
 				}
@@ -284,7 +298,8 @@ export default class MapGenerator
 				{
 					let neighbours = [];
 					// Checking if this is a walkable tile
-					if (this.tileArray[x][y][z].getType() === 'air'
+					if ((this.tileArray[x][y][z].getType() === 'air'
+						|| this.tileArray[x][y][z].getType() === 'cliff')
 						&& this.tileArray[x][y-1][z].getType() === 'floor')
 					{
 						// Determining if neighbours exist and can support inclines
@@ -408,11 +423,15 @@ export default class MapGenerator
 		let goals = mapGraph.getGoals();
 		let costs = mapGraph.multiGoalDijkstra(goals);
 
+		let playableArea = 0; // Used later to determine what percent of the map is actually
+		                      // reachable by currently selected bot (canStair, canFly)
+
 		// Finds the farthest points from the goal
 		let nodesByDist = [];
 		let maxDistFromGoal = 0;
 		for (let [n, c] of costs)
 		{
+			if (c > 0) playableArea++;
 			if (c > maxDistFromGoal)
 			{
 				maxDistFromGoal = c;
@@ -420,22 +439,43 @@ export default class MapGenerator
 			}
 		}
 
-		let spawnFound = false;
-		let farthestNodeIndex = nodesByDist.length - 1;
-		while (!spawnFound)
+		// Determining if enough of the map is accessible
+		// NOTE: very close to 60% of a map will be non-wall tiles
+		const totalPlayableArea = (this.length - 2)*(this.width - 2);
+		//console.log("total area", 0.6*totalPlayableArea, "playableArea",playableArea);
+
+		//console.log("Level length:", maxDistFromGoal, "/", this.minLevelLength);
+		if (maxDistFromGoal < this.minLevelLength)
 		{
-			const x = nodesByDist[farthestNodeIndex].x;
-			const z = nodesByDist[farthestNodeIndex].z;
-			const y = this.getTopTile(x,z);
-			// Prevents spawnpoint from overriding stairs
-			if (this.tileArray[x][y][z].getType() === 'air')
+			//console.log("THE NETHER!");
+			//console.log("[MapGenerator] path to goal is too short; regenerating map...");
+			this.generateMap(false);
+		}
+		else if (playableArea * MapGenerator.INACCESSIBLE_ALLOWANCE
+			< totalPlayableArea * MapGenerator.FLOOR_PROPORTION)
+		{
+			//console.log("[MapGenerator] too much of map is inaccessible; regenerating map...");
+			this.generateMap(false);
+		}
+		else
+		{
+			let spawnFound = false;
+			let farthestNodeIndex = nodesByDist.length - 1;
+			while (!spawnFound)
 			{
-				spawnFound = true;
-				this.tileArray[x][y][z] = new Tile('start');
-				//console.log("WATER BUCKET... RELEASE!");
+				const x = nodesByDist[farthestNodeIndex].x;
+				const z = nodesByDist[farthestNodeIndex].z;
+				const y = this.getTopTile(x,z);
+				// Prevents spawnpoint from overriding stairs
+				if (this.tileArray[x][y][z].getType() === 'air')
+				{
+					spawnFound = true;
+					this.tileArray[x][y][z] = new Tile('start');
+					//console.log("WATER BUCKET... RELEASE!");
+				}
+				//else { console.log("CHICKEN JOCKEYYYYYYY!"); }
+				farthestNodeIndex--;
 			}
-			//else { console.log("CHICKEN JOCKEYYYYYYY!"); }
-			farthestNodeIndex--;
 		}
 	}
 
@@ -459,43 +499,43 @@ export default class MapGenerator
 		    		if (this.tileArray[x][y][z].getType() === 'wall')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, wallMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y - scale, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'floor')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, floorMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y - scale, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'ramp')
 		    		{
-		    			const geometry = new THREE.PlaneGeometry( 1, Math.sqrt(2));
+		    			const geometry = new THREE.PlaneGeometry( scale, scale*Math.sqrt(2));
 						const plane = new THREE.Mesh( geometry, rampMat );
 						plane.rotateY(Math.PI - Math.PI / 2 * this.tileArray[x][y][z].getFacing());
 						plane.rotateX( Math.PI / 4);
-						plane.position.set(scale*(x - 0.5*this.length), scale*(y-1), scale*(z - 0.5*this.width));
+						plane.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
 		    			levelGeo.add(plane);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'stair')
 		    		{
-		    			const geometry = new THREE.PlaneGeometry( 1, Math.sqrt(2));
+		    			const geometry = new THREE.PlaneGeometry( scale, scale*Math.sqrt(2));
 						const plane = new THREE.Mesh( geometry, stairMat );
 						plane.rotateY(Math.PI - Math.PI / 2 * this.tileArray[x][y][z].getFacing());
 						plane.rotateX( Math.PI / 4);
-						plane.position.set(scale*(x - 0.5*this.length), scale*(y-1), scale*(z - 0.5*this.width));
+						plane.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
 		    			levelGeo.add(plane);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'goal')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, goalMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y - scale, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'start')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, startMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y - scale, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    	}
@@ -519,23 +559,25 @@ export default class MapGenerator
 			}
 		}
 
-		for (let [n,d] of vf)
+		//console.log("Level length:", maxCost);
+
+		for (let [nid,d] of vf)
 		{
 			if (d.length() !== 0)
 			{
+				let n = mapGraph.get(nid);
 				let height = this.getTopTile(n.x, n.z) - 1;
 				if (this.tileArray[n.x][height+1][n.z].getType() === 'stair'
 					|| this.tileArray[n.x][height+1][n.z].getType() === 'ramp')
 				{
 					height = height + 1;
 				}
-				const pos = new THREE.Vector3(scale*n.x - 0.5*this.length, scale*height, scale*n.z - 0.5*this.width);
+				const pos = new THREE.Vector3(scale*(n.x - 0.5*this.length), scale*(height+1), scale*(n.z - 0.5*this.width));
 				const level = 1 - costs.get(n) / maxCost;
 				levelGeo.add(new THREE.ArrowHelper(d, pos, 0.5*scale, 
 					(level*255) << 8, scale*0.25, scale*0.25));
 			}
 		}
-
 		return levelGeo;
 	}
 }
