@@ -64,6 +64,13 @@ class Drone extends Entity {
       circleRadius: 1, // Radius of the wander circle.
       jitterAmount: 0.3, // How much the wander target jitters each frame.
     });
+    if (this.autoLights !== false && this.mesh) {           // JAMES: default ON.
+      const tint = TeamColour[this.team];                     // JAMES: side colour.
+      this.enableHeadlights(tint, 60, 25);                    // JAMES: spot‑light.
+      this.enableBulbLight?.(tint, 8, 12);                    // JAMES: point‑glow.
+    }
+    
+    
   }
 }
 
