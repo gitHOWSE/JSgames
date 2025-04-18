@@ -1,4 +1,7 @@
 import { Entity } from "./Entity.js";
+import { isHostileTo } from "./Team.js";
+import { raycast }      from "../Util/raycast.js";
+
 
 class EntityManager {
   constructor() {
@@ -7,6 +10,21 @@ class EntityManager {
     this.entityMap = new Map(); // Maps entities by tag so manager can give all entities of a tag
   }
 
+  getNearestHostile(originEntity, maxDist = Infinity) {
+    let best = null, bestD = maxDist;
+    const originPos = originEntity.getWorldPosition(new THREE.Vector3());
+  
+    for (const target of this.entities) {
+      if (target === originEntity) continue;
+      if (!isHostileTo(originEntity, target)) continue;
+  
+      const tgtPos = target.getWorldPosition(new THREE.Vector3());
+      if (!raycast(originPos, tgtPos)) continue;            // JAMES: LOS test.
+      const d = originPos.distanceTo(tgtPos);
+      if (d < bestD) { bestD = d; best = target; }
+    }
+    return best;
+  }
   // Updates the entities and entityMap to only include entities with positive health.
   removeDeadEntities() {
     // Remove dead entities from the main entities array
@@ -63,6 +81,9 @@ class EntityManager {
     }
   }
 }
+
+
+
 
 // Create and export a singleton instance of EntityManager.
 const entityManagerInstance = new EntityManager();

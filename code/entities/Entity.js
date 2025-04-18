@@ -1,15 +1,26 @@
 // entities/Entity.js
+//TODO CLEAN UP DUPLICATES
+
+
 import * as THREE from "three";
 import { Movement } from "./Movement.js";
 import { Item } from "./Items.js";
 import checkHacks from "../robots/hax.js";
 import { WanderBehaviour } from "../robots/behaviours.js";
+import { switchTeam, Teams, isHostileTo } from "./Team.js";
+import { applyHeadlightTint, TeamColour } from "../Util/HeadlightTint.js";
 export class Entity {
   static nextId = 0;
 
   constructor(params = {}) {
     //JAMES: Assign a unique ID
     this.id = Entity.nextId++;
+/* ---------- allegiance & armour ---------- */
+this.team      = params.team || Teams.enemy;  // JAMES: default side.
+this.max_armor = params.max_armor ?? 50;      // JAMES: hack gate.
+this.armor     = this.max_armor;              // JAMES: current armour.
+
+
 
     //JAMES: Tag & basic stats
     this.tag = params.tag || "default";
@@ -41,7 +52,13 @@ export class Entity {
     if (this.mesh) {
       this.model.add(this.mesh);
     }
-
+    if (params.autoLights !== false && this.mesh) {           // JAMES: default ON.
+      const tint = TeamColour[this.team];                     // JAMES: side colour.
+      this.enableHeadlights(tint, 60, 25);                    // JAMES: spot‑light.
+      this.enableBulbLight?.(tint, 8, 12);                    // JAMES: point‑glow.
+    }
+    
+    
     //JAMES: Track previous quaternion on the model for delta‑rotation
     this.prevQuaternion = this.model.quaternion.clone();
 
@@ -57,8 +74,26 @@ export class Entity {
     }
 
     //JAMES: Player‑controlled flag
-    this.is_hackable = false;
     this.is_robot = false;
+    this.is_stationary_electronic = false;
+
+    /* ---------- automatic lights ---------- */
+
+  }
+
+  getWorldPosition(target = window.origin) {
+    return this.model.getWorldPosition(target);
+  }
+
+
+  getPositionRelativeTo(referenceObj, out = new THREE.Vector3()) {
+    // ensure world matrices are current
+    if (this.model.parent) this.model.parent.updateMatrixWorld(true);
+
+    // 1. write our world position into out
+    this.model.getWorldPosition(out);
+    // 2. convert into referenceObj’s local space
+    return referenceObj.worldToLocal(out);
   }
 
   //JAMES: Returns the world forward direction vector.
@@ -71,6 +106,11 @@ export class Entity {
   //JAMES: Returns the local forward direction vector.
   getLocalForwardDirection() {
     return new THREE.Vector3(0, 0, -1);
+  }
+  toggleTeam(override) {
+    const next = switchTeam(this.team, override);
+    this.setTeam(next);
+    return next;
   }
 
   //JAMES: Enables a SpotLight as headlights.
@@ -141,7 +181,7 @@ export class Entity {
         .multiply(this.prevQuaternion.clone().invert());
       this.movement.velocity.applyQuaternion(deltaQuat);
       this.prevQuaternion.copy(currentQuat);
-
+      this.setTeam("player")
       //JAMES: AI wanderers get a steering force but no forward‑snap
     } else if (this.behaviour) {
       const steer = this.behaviour.calculate(delta);
@@ -193,16 +233,34 @@ export class Entity {
   //JAMES: Mark/unmark as player
   makePlayer() {
     window.player = this;
+    this.setTeam("player");
     console.log(`>> makePlayer(): entity ${this.id} is now window.player`);
   }
   unMakePlayer() {
     if (window.player === this) {
+      this.setTeam("enemy");
       console.log(
         `>> unMakePlayer(): entity ${this.id} removed from window.player`,
       );
       window.player = null;
     }
-  } //JAMES: Accessors
+  }
+  //JAMES: Accessors
+
+
+  isStationaryElectronic() {
+    return this.is_stationary_electronic;
+  }
+
+  setStationaryElectronic(t = true) {
+    this.is_stationary_electronic = !!t;
+  }
+
+
+  isFriendly(other) {
+    return other.getTeam && other.getTeam() === this.getTeam();
+  }
+
   getId() {
     return this.id;
   }
@@ -215,9 +273,8 @@ export class Entity {
   isRobot() {
     return this.is_robot;
   }
-  isRobot() {
-    return this.is_robot;
-  }
+  getTeam() { return this.team; }
+
   getMaxHealth() {
     return this.max_health;
   }
@@ -233,6 +290,11 @@ export class Entity {
   getPos() {
     return this.position;
   }
+  getTeam() {
+    return this.team;
+  }             // JAMES: access.
+
+  isFriendly(other) { return !isHostileTo(this, other); }
   getHackable() {
     return this.is_hackable;
   }
@@ -270,4 +332,38 @@ export class Entity {
       this.has_legs = false;
     }
   }
+  /* =======================================================================
+   TEAM & DURABILITY HELPERS
+ ======================================================================= */
+
+// JAMES: Get current allegiance.
+getTeam() { return this.team; }  // JAMES: accessor.
+
+// JAMES: Change side and retint lights.
+setTeam(t) {                     // JAMES: mutate + tint.
+  this.team = t in Teams ? t : Teams.enemy;  // JAMES: validate.
+  applyHeadlightTint(this);                  // JAMES: recolour.
+}
+
+// JAMES: Are we on the same team?  (Immovables are never hostile.)
+isFriendly(other) { return !isHostileTo(this, other); }  // JAMES: compare.
+
+/* ---------- armour ---------- */
+getArmor()    { return this.armor; }          // JAMES: accessor.
+getMaxArmor() { return this.max_armor; }      // JAMES: accessor.
+
+/** takeDamage() — armour first, spill hits health. */
+takeDamage(damage, pierce = false) {          // JAMES: mutator.
+  if (pierce || this.armor <= 0) {
+    this.health -= damage;                    // JAMES: direct bleed.
+  } else {
+    const spill = Math.max(0, damage - this.armor); // JAMES: overflow.
+    this.armor  = Math.max(0, this.armor - damage); // JAMES: deplete.
+    this.health -= spill;                     // JAMES: residual.
+    if (this.armor === 0) {
+      /* JAMES: armour broken — SFX/flash hook here. */
+    }
+  }
+}
+
 }

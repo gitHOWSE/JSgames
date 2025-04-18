@@ -13,17 +13,26 @@ import { startLevelOne, updateLevelOne } from "./levels/levelone.js";
 import entityManager from "./entities/EntityManager.js";
 import { assetLoader } from "./Util/AdvancedAssetLoader.js";
 import { LoadingScreen } from "./Util/LoadingScreen.js";
+import { or } from "three/tsl";
 
 window.controller = controller;
 window.cameraManager = cameraManager;
 window.player = null;
 
 //JAMES: Global debug flag to toggle debugging tools.
-const DEBUG = false;
+
+window.DEBUG = true;
+let DEBUG = window.DEBUG;
 const clock = new THREE.Clock();
 
 //JAMES: Create the loading screen instance and add it to the camera early.
 const loadingScreen = new LoadingScreen(cameraManager.camera);
+
+const origin = new THREE.Object3D();
+origin.position.set(0,0,0);
+
+window.origin = origin;
+
 
 //JAMES: Create the GUI manager and its start game panel.
 window.guiManager = new GuiManager(cameraManager.camera);
@@ -96,7 +105,7 @@ if (DEBUG) {
       `//JAMES: Scene children: ${cameraManager.scene.children.length}, ` +
         `Entities: ${entityManager.getEntities().length}`,
     );
-    // Optional: if Chrome, log JS heap
+
     if (performance.memory) {
       console.log(
         `//JAMES: JS Heap Used: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)} MB`,

@@ -7,6 +7,7 @@ import { Item } from "../entities/Items.js";
 import { Entity } from "../entities/Entity.js";
 import entityManager from "../entities/EntityManager.js";
 import { assetLoader } from "../Util/AdvancedAssetLoader.js";
+import { Teams } from "../entities/Team.js";
 
 import { WanderBehaviour } from "../robots/behaviours.js";
 
@@ -28,6 +29,9 @@ class Vacuum extends Entity {
     this.setMovable(true);
     this.is_robot = true;
     this.is_hackable = true;
+    this.setTeam("players");
+
+
 
     //JAMES: Position the vacuum if provided
     if (params.position instanceof THREE.Vector3) {
@@ -54,8 +58,14 @@ class Vacuum extends Entity {
       circleRadius: 1, // radius of that circle
       jitterAmount: 0.3, // how much the wander target jitters each frame
     });
+
   }
+
+
+
+
 }
+
 
 /**
  * createVacuum

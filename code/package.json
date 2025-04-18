@@ -8,6 +8,6 @@
     "three-mesh-ui": "^6.5.4"
   },
   "devDependencies": {
-    "vite": "^6.2.5"
+    "vite": "^6.3.1"
   }
 }

@@ -4,6 +4,9 @@
 //JAMES: Tiles are added asynchronously by returning a Promise that resolves as soon as they are registered.
 //JAMES: The update(delta) method is called each frame (or at a throttled rate) to call update(delta) on all tiles.
 
+import { getTileCenter, TILE_SIZE_XZ } from "../levels/levelSetup.js"; 
+
+
 export class TileManager {
   /**
    * @param {number} updateIntervalFrames — Number of frames between tile.update() calls.
@@ -114,6 +117,27 @@ export class TileManager {
     }
   }
 
+    /**
+   * JAMES: Returns the tile whose footprint contains the given world‑space X/Z,
+   * or null if none.
+   * @param {number} x — world X coordinate
+   * @param {number} z — world Z coordinate
+   * @returns {Object|null}
+   */
+    getTileAt(x, z) {
+      const half = TILE_SIZE_XZ / 2;
+      for (const tile of this.tiles) {
+        const pos = tile.model.position;
+        if (
+          Math.abs(x - pos.x) <= half &&
+          Math.abs(z - pos.z) <= half
+        ) {
+          return tile;
+        }
+      }
+      return null;
+    };
+
   /**
    * JAMES: Helper function to determine the tile’s type key.
    *       By default, it uses the constructor name.
@@ -124,6 +148,9 @@ export class TileManager {
     return tileEntity.constructor.name;
   }
 }
+
+
+
 
 //JAMES: Export a singleton instance so the game can use one shared TileManager.
 export const tileManager = new TileManager();

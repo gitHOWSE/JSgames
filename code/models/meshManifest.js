@@ -103,6 +103,8 @@ export default [
     url: "/models/lowpoly/effects/Cartoon_Bomb_0408235548_texture.glb",
   },
 
+
+
   // Low‑poly animation clips
   {
     name: "dogWalking",

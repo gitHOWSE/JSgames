@@ -3,6 +3,7 @@
 
 import * as THREE from "three";
 import entityManager from "../entities/EntityManager.js";
+import { switchTeam, Teams } from "../entities/Team.js";
 
 //JAMES: Debug function to log all entities' id, position, and hackable flag.
 function logEntityPositions() {
@@ -28,7 +29,7 @@ export default function checkHacks(playerEntity) {
   }
   if (now - playerEntity.lastHackTime < 5000) {
     console.log("//JAMES: Hack cooldown active");
-    return; // Cooldown not finished.
+    return; 
   }
 
   if (!window.controller) {
@@ -37,65 +38,67 @@ export default function checkHacks(playerEntity) {
   }
 
   if (!window.controller.isControlActive("action1")) {
-    return; // Hack key not active.
+    
+    return; 
   }
-
-  //JAMES: Log all entities for debugging.
+console.log(`//JAMES: Hack called by player ${playerEntity.id}, ${playerEntity.position.x.toFixed(2)}, ${playerEntity.position.y.toFixed(2)}, ${playerEntity.position.z.toFixed(2)}`);
   logEntityPositions();
 
   const entities = entityManager.getEntities();
   console.log(`//JAMES: Checking hacks; ${entities.length} entities found`);
 
   for (let target of entities) {
-    if (target.id === playerEntity.id) continue;
+    if (target.id === playerEntity.id || target=== window.player) continue;
 
     if (!target.getHackable()) {
       console.log(`//JAMES: Entity ${target.id} is not hackable`);
       continue;
     }
 
-    target.updateBoundingBox();
-    const targetCenter = new THREE.Vector3();
-    target.boundingBox.getCenter(targetCenter);
+    const targetCenter = target.position.clone();
     const distance = playerEntity.position.distanceTo(targetCenter);
-
-    //JAMES: Compute target radius using bounding box dimensions.
-    const size = new THREE.Vector3();
-    target.boundingBox.getSize(size);
-    const radius = 0.5 * Math.max(size.x, size.y, size.z);
+    const radius = 1;              
     const effectiveDistance = distance - radius;
 
     console.log(
       `//JAMES: Target ${target.id}: distance = ${distance.toFixed(2)}, radius = ${radius.toFixed(2)}, effectiveDistance = ${effectiveDistance.toFixed(2)}`,
     );
-
-    //JAMES: For testing, using effectiveDistance < 100.
-    if (effectiveDistance < 3) {
+//&& target.getArmor() <= 0
+    //JAMES: For testing, using effectiveDistance < 100 ish.
+    if (effectiveDistance < 6 ) {
       playerEntity.lastHackTime = now;
       window.hackDisabledUntil = now + 3000;
       if (target.is_robot) {
-        console.log(`//JAMES: Robot entity ${target.id} hacked.`);
+        console.log(`//JAMES: Robot ${playerEntity} entity hacked ${target.id}.`);
         const previous = playerEntity;
         previous.isFrozen = true;
+        target.setTeam("player")
         previous.movement.velocity.set(0, 0, 0);
         previous.movement.acceleration.set(0, 0, 0);
         setTimeout(() => playerEntity.setHackable(), 1000);
         setTimeout(() => {
           previous.isFrozen = false;
-        }, 10000);
+        }, 5000);
         playerEntity.unMakePlayer();
         target.makePlayer();
+        if (target.carryTurret) {
+          target.carryTurret.setTeam("player");
+          target.carryTurret.lampsOn = false; // JAMES: Force light refresh
+        }
+
+
         target.movement.velocity.set(0, 0, 0);
       } else {
         console.log(
           `//JAMES: Non-robot entity ${target.id} hacked (disabled).`,
         );
         target.isFrozen = true;
+        target.setTeam("player");
         target.movement.velocity.set(0, 0, 0);
         target.movement.acceleration.set(0, 0, 0);
         setTimeout(() => {
           target.isFrozen = false;
-        }, 90000);
+        }, 5000);
       }
 
       break; //JAMES: Hack only one entity per key press.

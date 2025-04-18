@@ -9,11 +9,14 @@ import Floor from "../tilesetc/floor.js";
 import Wall from "../tilesetc/wall.js";
 import Ramp from "../tilesetc/ramp.js";
 import Steps from "../tilesetc/steps.js";
+import { Dog } from "../robots/dog.js";
+import { Turret } from "../robots/turret.js";
+import { createForklift } from "../robots/forklift.js";
+import { createVacuum } from "../robots/vacuum.js";
+import { createDrone } from "../robots/drone.js";
+import entityManagerInstance from "../entities/EntityManager.js";
 
-// JAMES: Grid spacing must match the scale used by your tile classes.
-const TILE_SIZE_XZ = 12;
-
-// JAMES: These module‑level variables hold map parameters for later use.
+export const TILE_SIZE_XZ = 12;
 let mapTileArray = null;
 let mapLength = 0;
 let mapWidth = 0;
@@ -21,19 +24,11 @@ let mapMaxHeight = 0;
 let mapHalfX = 0;
 let mapHalfZ = 0;
 
-/**
- * JAMES: Asynchronously sets up a level.
- * @param {number} level - Level number (affects generation parameters).
- */
 export async function setupLevel(level = 1) {
-  // JAMES: Create a random integer seed.
   const seed = Math.floor(Math.random() * 1000000);
-
-  // JAMES: Generate the procedural map.
   const mapGen = new MapGenerator(level, seed);
   mapGen.generateMap();
   const { tileArray, length, width, maxHeight } = mapGen;
-  // Save these for lookup later.
   mapTileArray = tileArray;
   mapLength = length;
   mapWidth = width;
@@ -41,7 +36,6 @@ export async function setupLevel(level = 1) {
   mapHalfX = length / 2;
   mapHalfZ = width / 2;
 
-  // JAMES: Loop over every tile in the generated tile array.
   for (let x = 0; x < length; x++) {
     for (let y = 0; y < maxHeight; y++) {
       for (let z = 0; z < width; z++) {
@@ -49,7 +43,7 @@ export async function setupLevel(level = 1) {
         const type = tile.getType();
         let facing = tile.getFacing();
         console.log(type.toString(), "Facing", facing.toString());
-        // JAMES: Compute world position for grid tile so that the map is centered.
+
         const worldX = (x - mapHalfX) * TILE_SIZE_XZ;
         const worldZ = (z - mapHalfZ) * TILE_SIZE_XZ;
         const storyY = y;
@@ -57,129 +51,32 @@ export async function setupLevel(level = 1) {
         let instance = null;
         switch (type) {
           case "wall":
-            instance = new Wall({
-              scene: cameraManager.scene,
-              x: worldX,
-              z: worldZ,
-              story: storyY,
-            });
-            if (typeof instance.setOrientationNorth === "function") {
-              facing = Math.floor(Math.random() * 3);
-              switch (facing) {
-                case 0:
-                  instance.setOrientationNorth();
-                  break;
-                case 1:
-                  instance.setOrientationWest();
-                  break;
-                case 2:
-                  instance.setOrientationSouth();
-                  break;
-                case 3:
-                  instance.setOrientationEast();
-                  break;
-                default:
-                  instance.model.rotation.y = facing * (Math.PI / 2);
-              }
-            } else {
-              instance.model.rotation.y = facing * (Math.PI / 2);
-            }
+            instance = new Wall({ scene: cameraManager.scene, x: worldX, z: worldZ, story: storyY });
             break;
-
           case "floor":
-            instance = new Floor({
-              scene: cameraManager.scene,
-              x: worldX,
-              z: worldZ,
-              story: storyY,
-            });
-            if (typeof instance.setOrientationNorth === "function") {
-              facing = Math.floor(Math.random() * 3);
-              switch (facing) {
-                case 0:
-                  instance.setOrientationNorth();
-                  break;
-                case 1:
-                  instance.setOrientationWest();
-                  break;
-                case 2:
-                  instance.setOrientationSouth();
-                  break;
-                case 3:
-                  instance.setOrientationEast();
-                  break;
-                default:
-                  instance.model.rotation.y = facing * (Math.PI / 2);
-              }
-            } else {
-              instance.model.rotation.y = facing * (Math.PI / 2);
-            }
+            instance = new Floor({ scene: cameraManager.scene, x: worldX, z: worldZ, story: storyY });
             break;
-
           case "ramp":
-            instance = new Ramp({
-              scene: cameraManager.scene,
-              x: worldX,
-              z: worldZ,
-              story: storyY,
-            });
-            // JAMES: Set ramp orientation based on facing value.
-            if (typeof instance.setOrientationNorth === "function") {
-              switch (facing) {
-                case 0:
-                  instance.setOrientationNorth();
-                  break;
-                case 1:
-                  instance.setOrientationWest();
-                  break;
-                case 2:
-                  instance.setOrientationSouth();
-                  break;
-                case 3:
-                  instance.setOrientationEast();
-                  break;
-                default:
-                  instance.model.rotation.y = facing * (Math.PI / 2);
-              }
-            } else {
-              instance.model.rotation.y = facing * (Math.PI / 2);
-            }
+            instance = new Ramp({ scene: cameraManager.scene, x: worldX, z: worldZ, story: storyY });
             break;
-
           case "stair":
-            instance = new Steps({
-              scene: cameraManager.scene,
-              x: worldX,
-              z: worldZ,
-              story: storyY,
-            });
-            if (typeof instance.setOrientationNorth === "function") {
-              switch (facing) {
-                case 0:
-                  instance.setOrientationNorth();
-                  break;
-                case 1:
-                  instance.setOrientationWest();
-                  break;
-                case 2:
-                  instance.setOrientationSouth();
-                  break;
-                case 3:
-                  instance.setOrientationEast();
-                  break;
-                default:
-                  instance.model.rotation.y = facing * (Math.PI / 2);
-              }
-            } else {
-              instance.model.rotation.y = facing * (Math.PI / 2);
-            }
+            instance = new Steps({ scene: cameraManager.scene, x: worldX, z: worldZ, story: storyY });
             break;
-
-          // JAMES: Skip other types (e.g. "air").
         }
 
         if (instance) {
-          // JAMES: Await registration so the tile is definitely in the TileManager.
+          if (typeof instance.setOrientationNorth === "function") {
+            switch (facing) {
+              case 0: instance.setOrientationNorth(); break;
+              case 1: instance.setOrientationWest(); break;
+              case 2: instance.setOrientationSouth(); break;
+              case 3: instance.setOrientationEast(); break;
+              default: instance.model.rotation.y = facing * (Math.PI / 2);
+            }
+          } else {
+            instance.model.rotation.y = facing * (Math.PI / 2);
+          }
+
           await tileManager.addTile(instance);
         }
       }
@@ -189,23 +86,77 @@ export async function setupLevel(level = 1) {
   console.log(`JAMES: Level generated with seed ${seed}.`);
 }
 
-/**
- * JAMES: Helper function that finds the nearest grid tile to a given world position.
- * Returns an object with grid indices { x, z }.
- * @param {THREE.Vector3} worldPos - The world position to query.
- * @returns {Object} – Object with properties x and z representing grid indices.
- */
+export function spawnDogJockey(positionVec3) {
+  const dogPo = new THREE.Vector3(4, 0, -4).add(positionVec3);
+  const dog = Dog.spawn(cameraManager.scene, dogPo);
+  const turret = new Turret({ scene: cameraManager.scene, position: dogPo.clone().add(new THREE.Vector3(-8, 0, 0)), host: dog });
+  dog.attachTurret(turret);
+  entityManagerInstance.addEntity(turret);
+}
+
+export async function spawnVacuum(positionVec3) {
+  const vac = await createVacuum(positionVec3);
+  cameraManager.scene.add(vac.model);
+  entityManagerInstance.addEntity(vac);
+  return vac;
+}
+
+export async function spawnForklift(positionVec3) {
+  const fl = await createForklift(positionVec3);
+  cameraManager.scene.add(fl.model);
+  entityManagerInstance.addEntity(fl);
+  return fl;
+}
+
+export function spawnTurret(positionVec3) {
+  const tr = new Turret({ scene: cameraManager.scene, position: positionVec3 });
+  cameraManager.scene.add(tr.model);
+  entityManagerInstance.addEntity(tr);
+  return tr;
+}
+
+export async function spawnDrone(positionVec3) {
+  const dr = await createDrone(positionVec3);
+  cameraManager.scene.add(dr.model);
+  entityManagerInstance.addEntity(dr);
+  return dr;
+}
+
+export function spawnDog(positionVec3) {
+  const dog = Dog.spawn(cameraManager.scene, positionVec3);
+  entityManagerInstance.addEntity(dog);
+  return dog;
+}
+
 export function findNearestTile(worldPos) {
-  // JAMES: Compute grid indices based on world coordinates.
   let gridX = Math.round(worldPos.x / TILE_SIZE_XZ + mapHalfX);
   let gridZ = Math.round(worldPos.z / TILE_SIZE_XZ + mapHalfZ);
-
-  // JAMES: Clamp indices to valid ranges.
   gridX = Math.min(Math.max(gridX, 0), mapLength - 1);
   gridZ = Math.min(Math.max(gridZ, 0), mapWidth - 1);
-
   console.log(`JAMES: Nearest tile grid coordinates: (${gridX}, ${gridZ})`);
   return { x: gridX, z: gridZ };
+}
+
+const TILE_HEIGHT =TILE_SIZE_XZ-5;
+export function getTileCenter(gridX, gridZ, storyLevel) {
+  // JAMES: Find the story index below the impact level
+  const belowStory = storyLevel - 1;
+  if (belowStory < 0) {
+    console.warn(
+      `JAMES: getTileCenterBelow called with storyLevel=${storyLevel}, no tile below.`
+    );
+  }
+
+  // JAMES: Compute X and Z exactly at the cube’s center
+  const halfXZ = TILE_SIZE_XZ * 0.5;
+  const worldX = (gridX - mapHalfX) * TILE_SIZE_XZ + halfXZ;
+  const worldZ = (gridZ - mapHalfZ) * TILE_SIZE_XZ + halfXZ;
+
+  // JAMES: Compute Y at half‑height of the cube below
+  const halfY = TILE_HEIGHT * 0.5;
+  const worldY = belowStory * -(-TILE_HEIGHT + halfY);
+
+  return new THREE.Vector3(worldX, worldY, worldZ);
 }
 
 export function updateLevelTiles(delta) {
