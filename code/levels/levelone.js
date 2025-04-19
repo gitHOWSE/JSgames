@@ -39,6 +39,30 @@ export async function startLevelOne() {
   await setupLevel(1);
   //let mapGen = new MapGenerator(1);
   //cameraManager.scene.add(mapGen.generateDebug());
+  
+  //let arr = mapGen.tileArray;
+  //let mapPop = new MapPopulator(arr, 1);
+  //arr = mapPop.populate();
+  //let nav = new Navigation(arr);
+  
+  // STEVEN: Here's an example of how to get the vector for where to go next from nav
+  //console.log(nav.getDirection(1,1,25,25));
+  
+  // STEVEN: Here's an example of how to get a random reachable point from nav
+  //const { x, z } = nav.getRandomReachablePoint(1,1);
+  //console.log("Random Reachable Point from (1, 1):",x,z);
+
+  /*
+  // STEVEN: Here's an example of getting a random point, and then using it to get a path
+  // through the map to it. Note that nav.getPath returns an array of arrays. Each subarray
+  // is an (x,z) coordinate pair of a step along the path to the goal
+  const { x, z } = nav.getRandomReachablePoint(1,1); // getting a random goal
+  const path = nav.getPath(x, z, 1,1);                     // getting a path to it
+
+  for (let i = 0; i < path.length; i++)
+  {
+    console.log("Step",i,"=",path[i]);
+  }*/
 
   player = await createVacuum(new THREE.Vector3(3, 0, 0));
 
