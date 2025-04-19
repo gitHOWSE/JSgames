@@ -103,9 +103,11 @@ export class MapPopulator
 		this.tileArray[x][y][z] = new Tile(tileType, tileFacing);
 	}
 
-	debugSpawnCandidateTypes() {
+	debugSpawnCandidateTypes()
+	{
 		console.log("=== Spawn Candidate Types ===");
-		for (const [tag, tileSet] of Object.entries(this.spawnCandidateTypes)) {
+		for (const [tag, tileSet] of Object.entries(this.spawnCandidateTypes)) 
+		{
 			const entries = Array.from(tileSet);
 			console.log(`${tag}: ${entries.length} tiles`);
 			
@@ -131,7 +133,8 @@ export class MapPopulator
 		return Math.floor(this.enemyCount * (weight / totalWeight));
 	}
 
-	generateSpawnCandidateTags() {
+	generateSpawnCandidateTags() 
+	{
 		this.spawnCandidateTypes = {
 			open: new Set(),
 			flat: new Set(),
@@ -148,8 +151,10 @@ export class MapPopulator
 			[-1, 0], [1, 0], [0, -1], [0, 1]
 		];
 
-		for (let x = 1; x < this.length - 1; x++) {
-			for (let z = 1; z < this.width - 1; z++) {
+		for (let x = 1; x < this.length - 1; x++) 
+		{
+			for (let z = 1; z < this.width - 1; z++) 
+			{
 				const y = this.getTopTile(x, z);
 				const tile = this.tileArray[x][y][z];
 
@@ -167,7 +172,8 @@ export class MapPopulator
 				];
 
 				let isRoom = false;
-				for (const pattern of roomPatterns) {
+				for (const pattern of roomPatterns) 
+				{
 					if (pattern.every(([dx, dz]) => {
 						const nx = x + dx;
 						const nz = z + dz;
@@ -180,15 +186,19 @@ export class MapPopulator
 					}
 				}
 
-				if (isRoom) {
+				if (isRoom) 
+				{
 					this.spawnCandidateTypes.room.add(key);
-				} else {
+				} 
+				else 
+				{
 					this.spawnCandidateTypes.hall.add(key);
 				}
 
 				// ---- FLAT CHECK ----
 				let isFlat = true;
-				for (const [dx, dz] of neighborOffsets) {
+				for (const [dx, dz] of neighborOffsets) 
+				{
 					const nx = x + dx;
 					const nz = z + dz;
 					const ny = this.getTopTile(nx, nz);
@@ -200,7 +210,8 @@ export class MapPopulator
 						break;
 					}
 				}
-				if (isFlat) {
+				if (isFlat) 
+				{
 					this.spawnCandidateTypes.flat.add(key);
 				}
 
@@ -211,7 +222,8 @@ export class MapPopulator
 				let isHighGround = true;
 				let lowerFound = false;
 
-				for (const [dx, dz] of neighborOffsets) {
+				for (const [dx, dz] of neighborOffsets) 
+				{
 					const nx = x + dx;
 					const nz = z + dz;
 					const ny = this.getTopTile(nx, nz);
@@ -240,7 +252,8 @@ export class MapPopulator
 	}
 
 	// Returns coordinate arrays of all tiles that meet the input candidate requirements
-	getCandidateTiles({ and = [], or = [] } = {}) {
+	getCandidateTiles({ and = [], or = [] } = {}) 
+	{
 		const tagSets = this.spawnCandidateTypes;
 
 		// Helper to get Set of "x,y,z" strings for a tag
@@ -249,20 +262,25 @@ export class MapPopulator
 		let resultSet = new Set();
 
 		// OR logic: union of all listed tag sets
-		if (or.length > 0) {
+		if (or.length > 0) 
+		{
 			resultSet = new Set([...getTagSet(or[0])]);
-			for (let i = 1; i < or.length; i++) {
-				for (const coord of getTagSet(or[i])) {
+			for (let i = 1; i < or.length; i++) 
+			{
+				for (const coord of getTagSet(or[i])) 
+				{
 					resultSet.add(coord);
 				}
 			}
 		}
 
 		// AND logic: intersection of all listed tag sets
-		if (and.length > 0) {
+		if (and.length > 0) 
+		{
 			const andSets = and.map(getTagSet);
 			let intersection = new Set(andSets[0]);
-			for (let i = 1; i < andSets.length; i++) {
+			for (let i = 1; i < andSets.length; i++) 
+			{
 				intersection = new Set([...intersection].filter(x => andSets[i].has(x)));
 			}
 			// If OR was used too, take the intersection of both sets
@@ -296,7 +314,8 @@ export class MapPopulator
 
 		let entitiesSpawned = 0;
 
-		for (const type of Object.keys(MapPopulator.EnemySpawnPreferences)) {
+		for (const type of Object.keys(MapPopulator.EnemySpawnPreferences)) 
+		{
 			const candidates = this.getSpawnCandidates(type);
 			//console.log(`Spawn candidates for ${type}: ${candidates.length}`);
 			const spawnNum = this.getSpawnNum(String(type));
@@ -312,6 +331,7 @@ export class MapPopulator
 					const coordIndex = Math.floor(Math.random() * candidateNum);
 					const coord = candidates[coordIndex];
 					this.setTileAt(coord, String(type));
+					//console.log("[MapPopulator] spawning", type, "at",coord);
 
 					// Removing this location from spawn candidates
 					candidates.splice(coordIndex, 1);
