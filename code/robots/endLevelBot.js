@@ -13,12 +13,18 @@ export class EndLevelTerminal extends OnwallLow {
     this.nextLevel = window.level +1;
   }
 
-
-     onHacked() {
-    setTimeout(null ,5000);
+  onHacked() {
+    // Advance the level
     window.level = this.nextLevel;
-    console.log(`//JAMES: Level complete! Advancing to level ${window.level}`);
+    console.log(`Advancing to level ${window.level}`);
+  
+    // Persist it to sessionStorage
+    sessionStorage.setItem("level", window.level);
+  
+    // Reload the page
+    window.location.reload();
   }
+  
 }
 
 /** convenience spawner */

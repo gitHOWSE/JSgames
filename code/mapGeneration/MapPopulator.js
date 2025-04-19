@@ -21,7 +21,7 @@ export class MapPopulator
 			vacuum:     { or: ['open'] },
 			goo:        { or: ['open', 'highGround'] },
 			turret:     { or: ['room'] },
-			dog:        { or: ['nearStair'] },
+			dog:        { or: ['open'] },
 			dogJockey:  { or: ['nearStair', 'room'] },
 			android:    { or: ['hall', 'nearStair'] },
 			drone:      { or: ['room', 'nearCliff', 'highGround'] }
@@ -46,7 +46,7 @@ export class MapPopulator
 				vacuum:     2,
 				goo: 	    3,
 				turret:     1,
-				dog:        2,
+				dog:        5,
 				dogJockey:  0,
 				android:    0,
 				drone:      0

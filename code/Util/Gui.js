@@ -2,7 +2,9 @@
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
 import { cameraManager } from "./Camera.js"; // Attach panels to the scene.
+
 let scene = cameraManager.scene;
+
 export class GuiManager {
   constructor(camera) {
     this.camera = camera;
@@ -33,21 +35,6 @@ export class GuiManager {
     window.addEventListener("keydown", this._onKeyDown.bind(this));
   }
 
-  // Save updated controls to the JSON file via a PUT request.
-  async saveControls() {
-    try {
-      const response = await fetch("/json/controls.json", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(this.controlBindings),
-      });
-      if (!response.ok) throw new Error("Failed to save controls.");
-      console.log("Updated Controls:", this.controlBindings);
-    } catch (error) {
-      console.error("Error saving controls:", error);
-    }
-  }
-
   // Create a generic panel.
   _createPanel(options) {
     let panelWidth = options.width || 1.2;
@@ -75,10 +62,7 @@ export class GuiManager {
     const distance = options.distance || 2;
     panel.position.set(0, 0, -distance);
     panel.visible = false;
-    // Instead of attaching to the camera, attach the panel to the scene.
-
     this.camera.add(panel);
-
     return panel;
   }
 
@@ -90,10 +74,10 @@ export class GuiManager {
     const panel = this._createPanel({
       fullScreen: true,
       distance: 2,
-      backgroundColor: 0x7fff00, // Puke green background
+      backgroundColor: 0x7fff00, // Puke green
     });
 
-    // Create a vertical container to hold the buttons.
+    // Create a vertical container to hold the level box and button.
     const container = new ThreeMeshUI.Block({
       width: panel.width * 0.9,
       height: panel.height * 0.7,
@@ -103,6 +87,24 @@ export class GuiManager {
       backgroundOpacity: 0,
     });
     panel.add(container);
+
+    // ----- Level Number Box -----
+    const levelBox = new ThreeMeshUI.Block({
+      width: 0.8,
+      height: 0.15,
+      margin: 0.02,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: new THREE.Color(0x1f1f1f),
+      borderRadius: 0.03,
+    });
+    const levelText = new ThreeMeshUI.Text({
+      content: `LEVEL NUMBER: ${window.level}`,
+      fontSize: 0.06,
+      textColor: new THREE.Color(0xffffff),
+    });
+    levelBox.add(levelText);
+    container.add(levelBox);
 
     // ----- Start Game Button -----
     const startButton = new ThreeMeshUI.Block({
@@ -115,7 +117,7 @@ export class GuiManager {
       borderRadius: 0.05,
     });
     const startText = new ThreeMeshUI.Text({
-      content: "Start Game",
+      content: "Start Level",
       fontSize: 0.08,
       textColor: new THREE.Color(0xffffff),
     });
@@ -129,8 +131,7 @@ export class GuiManager {
     });
     startButton.setupState({
       state: "hovered",
-      onSet: () =>
-        startButton.set({ backgroundColor: new THREE.Color(0x3fa65e) }),
+      onSet: () => startButton.set({ backgroundColor: new THREE.Color(0x3fa65e) }),
     });
     startButton.setupState({
       state: "active",
@@ -143,13 +144,14 @@ export class GuiManager {
       },
     });
 
-    // Save the start panel information.
     this.guiPanels.start = {
       panel,
       interactables: [startButton],
       onStart: null, // Callback for starting the game.
+      levelText,
     };
   }
+
   // ----------------------------
   // Panel Controls
   // ----------------------------
@@ -158,6 +160,10 @@ export class GuiManager {
       this.activePanel.panel.visible = false;
     }
     if (this.guiPanels[key]) {
+      // Update level text if showing start
+      if (key === "start" && this.guiPanels.start.levelText) {
+        this.guiPanels.start.levelText.set({ content: `LEVEL NUMBER: ${window.level}` });
+      }
       this.guiPanels[key].panel.visible = true;
       if (onActionCallback) {
         if (key === "start") {
@@ -191,9 +197,6 @@ export class GuiManager {
     this.activePanel = null;
   }
 
-  // ----------------------------
-  // Update and Event Handlers
-  // ----------------------------
   update() {
     if (!this.activePanel || !this.activePanel.panel.visible) return;
     this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -242,6 +245,20 @@ export class GuiManager {
       }
       this.saveControls();
       this.waitingForKey = null;
+    }
+  }
+
+  async saveControls() {
+    try {
+      const response = await fetch("/json/controls.json", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(this.controlBindings),
+      });
+      if (!response.ok) throw new Error("Failed to save controls.");
+      console.log("Updated Controls:", this.controlBindings);
+    } catch (error) {
+      console.error("Error saving controls:", error);
     }
   }
 }

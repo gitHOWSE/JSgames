@@ -46,9 +46,9 @@ export class TileManager {
         this.tileMap.get(type).push(tileEntity);
       }
 
-      console.log(
-        `JAMES: Added tile of type '${type}'. Total tiles: ${this.tiles.length}`,
-      );
+      //console.log(
+      //  `JAMES: Added tile of type '${type}'. Total tiles: ${this.tiles.length}`,
+      //);
       resolve(tileEntity);
     });
   }
@@ -75,9 +75,9 @@ export class TileManager {
       }
 
       if (this.tiles.indexOf(tileEntity) === -1) {
-        console.log(
-          `JAMES: Removed tile of type '${type}'. Total tiles: ${this.tiles.length}`,
-        );
+        //console.log(
+        //  `JAMES: Removed tile of type '${type}'. Total tiles: ${this.tiles.length}`,
+        //);
         resolve(tileEntity);
       } else {
         console.error("JAMES: removeTile failed — tile not found:", tileEntity);

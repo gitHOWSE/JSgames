@@ -8,7 +8,7 @@ import { assetLoader } from "../Util/AdvancedAssetLoader.js";
 
 //JAMES: Configuration for each low‑poly on‑wall asset.
 const LOWPOLY_ONWALL_CONFIG = {
-  accessTerminalLow: { scale: new THREE.Vector3(1.5, 1.5, 1.5), offsetY: 0.5 },
+  accessTerminalLow: { scale: new THREE.Vector3(5, 5, 5), offsetY: -1.5 },
   espressoDreamerLow: { scale: new THREE.Vector3(1.5, 1.5, 1.5), offsetY: 0.5 },
 };
 

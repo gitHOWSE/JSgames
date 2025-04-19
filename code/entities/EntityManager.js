@@ -30,6 +30,8 @@ class EntityManager {
     // Remove dead entities from the main entities array
     this.entities = this.entities.filter((e) => e.getHealth() > 0);
 
+    
+
     // Remove dead entities from the map
     this.entityMap.forEach((arr, key) => {
       this.entityMap.set(

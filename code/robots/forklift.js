@@ -221,6 +221,10 @@ class Forklift extends Entity {
       }
     }
     if (this.mixer) {
+      if (this.currentState) {
+        const steer = this.currentState.update(delta);
+        this.movement.acceleration.add(steer);
+      }
       this.mixer.update(delta);
     }
   }

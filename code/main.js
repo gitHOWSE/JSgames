@@ -1,44 +1,62 @@
 // main.js
 "use strict";
 
-//JAMES: Import necessary modules.
+const saved = sessionStorage.getItem("level");
+window.level = saved !== null ? Number(saved) : 1;
+
+// JAMES: Import necessary modules.
 import { cameraManager } from "./Util/Camera.js";
 import { GuiManager } from "./Util/Gui.js";
 import { controller } from "./Util/Controller.js";
-import { hudManager } from "./Util/Hud.js";
 import * as THREE from "three";
 import ThreeMeshUI from "three-mesh-ui";
 import { enableDebugging } from "./DebugTools.js";
-import { startLevelOne, updateLevelOne } from "./levels/levelone.js";
 import entityManager from "./entities/EntityManager.js";
 import { assetLoader } from "./Util/AdvancedAssetLoader.js";
 import { LoadingScreen } from "./Util/LoadingScreen.js";
-import { or } from "three/tsl";
 
+// JAMES: Expose globals.
 window.controller = controller;
 window.cameraManager = cameraManager;
-window.player = null;
+window.maxHeight = 44;
 
-//JAMES: Global debug flag to toggle debugging tools.
 
+// JAMES: Global debug flag.
 window.DEBUG = true;
-let DEBUG = window.DEBUG;
+const DEBUG = window.DEBUG;
+
+// JAMES: Clock for delta timing.
 const clock = new THREE.Clock();
 
-//JAMES: Create the loading screen instance and add it to the camera early.
+// JAMES: Loading screen setup.
 const loadingScreen = new LoadingScreen(cameraManager.camera);
 
+// JAMES: Origin helper object.
 const origin = new THREE.Object3D();
-origin.position.set(0,0,0);
-
+origin.position.set(0, 0, 0);
 window.origin = origin;
 
-
-//JAMES: Create the GUI manager and its start game panel.
+// JAMES: GUI manager and start panel.
 window.guiManager = new GuiManager(cameraManager.camera);
 window.guiManager.createStartGamePanel();
 
-//JAMES: Integrate debugging tools if DEBUG flag is true.
+// JAMES: Immediately show the start‐game panel (and register its callback)
+window.guiManager.showPanel("start", async () => {
+  console.log("Start Game pressed");
+  window.guiManager.hidePanel("start");
+
+  // Show loading screen and preload
+  loadingScreen.show();
+  await assetLoader.loadAll();
+  loadingScreen.hide();
+
+  // Dynamically import and launch the correct level module
+  const levelModule = await import(`./levels/level${window.level}.js`);
+  currentLevel = levelModule.default;
+  await currentLevel.start();
+});
+
+// JAMES: Debugging helpers.
 let debugHelpers = null;
 if (DEBUG) {
   debugHelpers = enableDebugging({
@@ -46,69 +64,72 @@ if (DEBUG) {
     camera: cameraManager.camera,
     renderer: cameraManager.renderer,
   });
-
-  //JAMES: Ensure the stats panel is on top of the canvas
-  if (debugHelpers.stats && debugHelpers.stats.dom) {
+  // JAMES: Ensure stats panel is on top.
+  if (debugHelpers.stats?.dom) {
     debugHelpers.stats.dom.style.zIndex = "100";
   }
 }
 
-//JAMES: When the Start Game button is pressed, preload assets then start the level.
+// JAMES: Reference to the current level module instance.
+let currentLevel = null;
+
+// JAMES: Start Game button callback.
 window.guiManager.showPanel("start", async () => {
   console.log("Start Game pressed");
   window.guiManager.hidePanel("start");
 
-  //JAMES: Show the loading screen so the scene is hidden during load.
+  // JAMES: Show loading screen and preload assets.
   loadingScreen.show();
-
-  //JAMES: Preload assets.
   await assetLoader.loadAll();
-
-  //JAMES: Hide the loading screen after asset loading completes.
   loadingScreen.hide();
 
-  //JAMES: Then, start Level One.
-  startLevelOne();
-  let levelOne = true;
+  // JAMES: Dynamically import the level module for the current level.
+  const levelModule = await import(`./levels/level${window.level}.js`);
+  currentLevel = levelModule.default;
+
+  // JAMES: Start the level.
+  await currentLevel.start();
 });
 
-//JAMES: Main render and update loop.
+// JAMES: Main animation loop.
 function animate() {
   requestAnimationFrame(animate);
 
-  if (debugHelpers && debugHelpers.stats) {
-    debugHelpers.stats.begin();
-  }
+  if (debugHelpers?.stats) debugHelpers.stats.begin();
 
-  const delta = clock.getDelta();
+  // JAMES: Update entity manager.
   entityManager.update();
 
-  //JAMES: Update ThreeMeshUI (this includes the loading screen) each frame.
+  // JAMES: Update UI frameworks.
   ThreeMeshUI.update();
   window.guiManager.update();
 
-  //JAMES: Render the scene.
-  cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
+  // JAMES: Compute time delta.
+  const delta = clock.getDelta();
 
-  if (debugHelpers && debugHelpers.stats) {
-    debugHelpers.stats.end();
+  // JAMES: Render or delegate to current level.
+  if (currentLevel) {
+    currentLevel.update(delta);
+  } else {
+    cameraManager.renderer.render(cameraManager.scene, cameraManager.camera);
   }
-  updateLevelOne(delta);
+
+  if (debugHelpers?.stats) debugHelpers.stats.end();
 }
 
 animate();
 
-//JAMES: Instrumentation: every 5s, log scene & entity counts
+// JAMES: Instrumentation: log scene and entity counts every 5 seconds.
 if (DEBUG) {
   setInterval(() => {
     console.log(
-      `//JAMES: Scene children: ${cameraManager.scene.children.length}, ` +
-        `Entities: ${entityManager.getEntities().length}`,
+      `//JAMES: Scene children: ${cameraManager.scene.children.length}, Entities: ${entityManager.getEntities().length}`
     );
-
     if (performance.memory) {
       console.log(
-        `//JAMES: JS Heap Used: ${Math.round(performance.memory.usedJSHeapSize / 1024 / 1024)} MB`,
+        `//JAMES: JS Heap Used: ${Math.round(
+          performance.memory.usedJSHeapSize / 1024 / 1024
+        )} MB`
       );
     }
   }, 5000);

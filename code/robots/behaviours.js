@@ -140,6 +140,62 @@ export class FlockBehaviour extends Behaviour {
 
     return totalForce;
   }
+
+  
+}
+class BaseFlowBehaviour extends Behaviour {
+  constructor(entity, goalTile, fieldType) {
+    super(entity);
+    this.goalTile = goalTile;
+    this.fieldType = fieldType;
+    this.arriveRadius = 1.5;
+    this.speedMultiplier = 1.0;
+  }
+
+  calculate(delta) {
+    const { TILE_SIZE_XZ, mapHalfX, mapHalfZ, vectorField } = window.levelContext || {};
+    const gridX = Math.round(this.entity.position.x / TILE_SIZE_XZ + mapHalfX);
+    const gridZ = Math.round(this.entity.position.z / TILE_SIZE_XZ + mapHalfZ);
+
+    const goalKey = `${this.goalTile[0]},${this.goalTile[1]}`;
+
+    const dir = navigation.getDirection(
+      goalTile[0],
+      goalTile[1],
+      gridX,
+      gridZ,
+      this.entity.canStair,
+      this.entity.canFly
+    );
+    
+    if (!dir || dir.length() === 0) return new THREE.Vector3(0, 0, 0);
+
+    const target = this.entity.position.clone().add(dir.clone().multiplyScalar(TILE_SIZE_XZ));
+    const desired = new THREE.Vector3().subVectors(target, this.entity.position);
+    const dist = desired.length();
+
+    if (dist < this.arriveRadius) return new THREE.Vector3(0, 0, 0);
+    desired.normalize().multiplyScalar(this.entity.movement.topSpeed * this.speedMultiplier);
+
+    return desired.sub(this.entity.movement.velocity).clampLength(0, this.entity.movement.maxForce);
+  }
 }
 
 
+export class FollowFlowFieldGround extends BaseFlowBehaviour {
+  constructor(entity, goalTile) {
+    super(entity, goalTile, "ramp");
+  }
+}
+
+export class FollowFlowFieldStairs extends BaseFlowBehaviour {
+  constructor(entity, goalTile) {
+    super(entity, goalTile, "stair");
+  }
+}
+
+export class FollowFlowFieldFly extends BaseFlowBehaviour {
+  constructor(entity, goalTile) {
+    super(entity, goalTile, "cliff");
+  }
+}

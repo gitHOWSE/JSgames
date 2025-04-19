@@ -30,7 +30,7 @@ export class MapParams
 		this.roomMinDim = MapParams.ROOM_TOTAL_MIN_DIM;
 		this.roomMaxDim = Math.floor(Math.max(this.roomMinDim, Math.min(MapParams.ROOM_TOTAL_MAX_DIM,
 			Math.floor(MapParams.ROOM_MAX_DIM_FACTOR * Math.min(this.length, this.width)))));
-		this.roomNum    = 20;//Math.floor(Math.pow((this.length+this.width)/2,2)/(30*this.roomMaxDim));
+		this.roomNum    = Math.floor(Math.pow((this.length+this.width)/2,2)/(30*this.roomMaxDim));
 
 		// Incline Params 0 = level 1, 1 = level 2...
 		this.rampWeights  = [6, 1, 1];

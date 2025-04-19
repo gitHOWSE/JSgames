@@ -9,6 +9,12 @@
 import * as THREE from "three";
 import { WanderBehaviour } from "./behaviours.js";
 
+import {
+  FollowFlowFieldGround,
+  FollowFlowFieldStairs,
+  FollowFlowFieldFly,
+} from "./behaviours.js";
+
 //
 // BaseState - a default state with no steering force
 //
@@ -38,33 +44,56 @@ export class PlayerState extends BaseState {
   }
 }
 
-//
-// GuardState - when the robot is patrolling/wandering
-//
 export class GuardState extends BaseState {
-  //JAMES: Constructor receives wander parameters if needed.
-  constructor(
-    entity,
-    { circleDistance = 2, circleRadius = 1, jitterAmount = 0.2 } = {},
-  ) {
+  constructor(entity) {
     super(entity);
-    //JAMES: Create an instance of the wander behavior for this entity.
-    this.wander = new WanderBehaviour(this.entity, {
-      circleDistance,
-      circleRadius,
-      jitterAmount,
-    });
+    this.timeSinceLastGoal = 0;
+    this.goalDuration = 5 + Math.random() * 10;
+    this.assignNewGoal();
+  }
+
+  assignNewGoal() {
+    const { length, width } = window.levelContext || {};
+    if (!length || !width) return;
+
+    const gx = Math.floor(Math.random() * length);
+    const gz = Math.floor(Math.random() * width);
+    this.goalTile = [gx, gz];
+
+    console.log(`//JAMES: ${this.entity.name} picked new goal tile: [${gx}, ${gz}]`);
+
+    //JAMES: Choose appropriate flowfield type.
+    let BehaviourClass;
+    if (this.entity.canFly) {
+      BehaviourClass = FollowFlowFieldFly;
+    } else if (this.entity.canStair) {
+      BehaviourClass = FollowFlowFieldStairs;
+    } else {
+      BehaviourClass = FollowFlowFieldGround;
+    }
+
+    this.behaviour = new BehaviourClass(this.entity, this.goalTile);
   }
 
   update(delta) {
-    //JAMES: Calculate the steering force for wandering.
-    const steeringForce = this.wander.calculate(delta);
-    //JAMES: Clamp the steering force so it does not exceed the entity's maximum force.
-    steeringForce.clampLength(0, this.entity.movement.maxForce);
-    //JAMES: Return the steering force to be applied in the entity update.
-    return steeringForce;
+    if (!this.entity.isMovable || !this.behaviour) return new THREE.Vector3(0, 0, 0);
+
+    this.timeSinceLastGoal += delta;
+    if (this.timeSinceLastGoal >= this.goalDuration) {
+      this.assignNewGoal();
+      this.timeSinceLastGoal = 0;
+    }
+
+    this.entity.movement.acceleration.set(0, 0, 0);
+    const force = this.behaviour.calculate(delta);
+    this.entity.movement.acceleration.add(force);
+
+    this.entity.updateAnimation?.(delta);
+    return force;
   }
 }
+
+
 
 //
 // AlertState - when the robot is actively seeking the player (target)
