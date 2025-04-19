@@ -43,9 +43,9 @@ export class MapParams
 		this.minLevelLength = Math.floor(Math.min(this.length, this.width) * 3);
 
 		this.noiseParams = [
-			{scale:0.01, octaves:4, persistence:0.5, lacunarity:2.0},
-			{scale:0.02, octaves:5, persistence:0.6, lacunarity:1.5},
-			{scale:0.05, octaves:6, persistence:0.3, lacunarity:2.5}
+			{scale:0.03, octaves:4, persistence:0.5, lacunarity:2.0},
+			{scale:0.05, octaves:5, persistence:0.6, lacunarity:1.5},
+			{scale:0.1, octaves:6, persistence:0.3, lacunarity:2.5}
 		];
 
 		//console.log("I... AM STEVE!");

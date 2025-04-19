@@ -67,13 +67,21 @@ export default class MapGenerator
 	generateMap(announce = true)
 	{
 		if (announce) console.log("[MapGenerator] starting mapgen...");
+		if (announce) console.log("[MapGenerator] loading tile array...");
 		this.fillTileArray();
 		// These modify tileArray to create the level layout. Initially layout is one solid wall
+		if (announce) console.log("[MapGenerator] recursively generating halls...");
 		this.generateWalls();								 // Carve a labyrinth in the walls
+		if (announce) console.log("[MapGenerator] adding rooms...");
 		this.generateRooms(this.roomNum, this.roomMinDim, this.roomMaxDim); // Add open rooms to the labyrinth
+		if (announce) console.log("[MapGenerator] randomising floor height...");
 		this.generateFloors();							 // Change floor height w/ Perlin
+		if (announce) console.log("[MapGenerator] preparing map for inclines...");
+		if (announce) console.log("[MapGenerator] connecting floors with inclines...");
 		this.generateStairsRamps(this.rampWeight, this.stairWeight, this.cliffWeight); // Add stairs connecting some floors
+		if (announce) console.log("[MapGenerator] adding exit...");
 		this.generateGoal();
+		if (announce) console.log("[MapGenerator] placing player spawn...");
 		this.generateSpawn(this.canStair, this.canFly);
 		if (announce) console.log("[MapGenerator]",this.length,"x",this.width," mapgen complete!");
 	}
@@ -450,13 +458,13 @@ export default class MapGenerator
 		if (maxDistFromGoal < this.minLevelLength)
 		{
 			//console.log("THE NETHER!");
-			//console.log("[MapGenerator] path to goal is too short; regenerating map...");
+			console.log("[MapGenerator] path to goal is too short; regenerating map...");
 			this.generateMap(false);
 		}
 		else if (playableArea * MapGenerator.INACCESSIBLE_ALLOWANCE
 			< totalPlayableArea * MapGenerator.FLOOR_PROPORTION)
 		{
-			//console.log("[MapGenerator] too much of map is inaccessible; regenerating map...");
+			console.log("[MapGenerator] too much of map is inaccessible; regenerating map...");
 			this.generateMap(false);
 		}
 		else
@@ -487,6 +495,7 @@ export default class MapGenerator
 		this.generateMap();
 
 		const scale = 1;
+		const yOffset = 0;
 		const wallGeo = new THREE.BoxGeometry(scale, scale, scale);
 		const wallMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
 		const floorMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
@@ -494,6 +503,7 @@ export default class MapGenerator
 		const stairMat = new THREE.MeshStandardMaterial({ color: 0xff0000, side: THREE.DoubleSide });
 		const goalMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
 		const startMat = new THREE.MeshStandardMaterial({ color: 0x8888ff });
+
 		const levelGeo = new THREE.Group();
 		for (let x = 0; x < this.length; x++) {
 			for (let z = 0; z < this.width; z++) {
@@ -501,13 +511,13 @@ export default class MapGenerator
 		    		if (this.tileArray[x][y][z].getType() === 'wall')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, wallMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*(y+yOffset), scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'floor')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, floorMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*(y+yOffset), scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'ramp')
@@ -516,7 +526,7 @@ export default class MapGenerator
 						const plane = new THREE.Mesh( geometry, rampMat );
 						plane.rotateY(Math.PI - Math.PI / 2 * this.tileArray[x][y][z].getFacing());
 						plane.rotateX( Math.PI / 4);
-						plane.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
+						plane.position.set(scale*(x - 0.5*this.length), scale*(y+yOffset), scale*(z - 0.5*this.width));
 		    			levelGeo.add(plane);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'stair')
@@ -525,19 +535,19 @@ export default class MapGenerator
 						const plane = new THREE.Mesh( geometry, stairMat );
 						plane.rotateY(Math.PI - Math.PI / 2 * this.tileArray[x][y][z].getFacing());
 						plane.rotateX( Math.PI / 4);
-						plane.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
+						plane.position.set(scale*(x - 0.5*this.length), scale*(y+yOffset), scale*(z - 0.5*this.width));
 		    			levelGeo.add(plane);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'goal')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, goalMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*(y+yOffset), scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    		else if (this.tileArray[x][y][z].getType() === 'start')
 		    		{
 		    			const cube = new THREE.Mesh(wallGeo, startMat);
-		    			cube.position.set(scale*(x - 0.5*this.length), scale*y, scale*(z - 0.5*this.width));
+		    			cube.position.set(scale*(x - 0.5*this.length), scale*(y+yOffset), scale*(z - 0.5*this.width));
 		    			levelGeo.add(cube);
 		    		}
 		    	}
@@ -574,7 +584,7 @@ export default class MapGenerator
 				{
 					height = height + 1;
 				}
-				const pos = new THREE.Vector3(scale*(n.x - 0.5*this.length), scale*(height+1), scale*(n.z - 0.5*this.width));
+				const pos = new THREE.Vector3(scale*(n.x - 0.5*this.length), scale*(height+1+yOffset), scale*(n.z - 0.5*this.width));
 				const level = 1 - costs.get(n) / maxCost;
 				levelGeo.add(new THREE.ArrowHelper(d, pos, 0.5*scale, 
 					(level*255) << 8, scale*0.25, scale*0.25));
