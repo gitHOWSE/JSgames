@@ -15,8 +15,14 @@ import { createForklift } from "../robots/forklift.js";
 import { createVacuum } from "../robots/vacuum.js";
 import { createDrone } from "../robots/drone.js";
 import entityManagerInstance from "../entities/EntityManager.js";
+import { MapPopulator } from "../mapGeneration/MapPopulator.js";
+import { createGoo } from "../robots/goo.js";
+import { spawnEndLevelTerminal } from "../robots/endLevelBot.js";
+
+
 
 export const TILE_SIZE_XZ = 12;
+export const TILE_HEIGHT =TILE_SIZE_XZ-5;
 let mapTileArray = null;
 let mapLength = 0;
 let mapWidth = 0;
@@ -36,13 +42,19 @@ export async function setupLevel(level = 1) {
   mapHalfX = length / 2;
   mapHalfZ = width / 2;
 
+  console.log(mapLength);
+
+  // Populate tileArray with enemy‐type tiles
+  const populator = new MapPopulator(tileArray, level);
+  const tilespawn = populator.populate();
+
+  // Place static geometry (floors, walls, ramps, stairs)
   for (let x = 0; x < length; x++) {
     for (let y = 0; y < maxHeight; y++) {
       for (let z = 0; z < width; z++) {
-        const tile = tileArray[x][y][z];
+        const tile = tilespawn[x][y][z];
         const type = tile.getType();
-        let facing = tile.getFacing();
-        console.log(type.toString(), "Facing", facing.toString());
+        const facing = tile.getFacing();
 
         const worldX = (x - mapHalfX) * TILE_SIZE_XZ;
         const worldZ = (z - mapHalfZ) * TILE_SIZE_XZ;
@@ -62,6 +74,8 @@ export async function setupLevel(level = 1) {
           case "stair":
             instance = new Steps({ scene: cameraManager.scene, x: worldX, z: worldZ, story: storyY });
             break;
+          default:
+            break;
         }
 
         if (instance) {
@@ -78,6 +92,63 @@ export async function setupLevel(level = 1) {
           }
 
           await tileManager.addTile(instance);
+        }
+      }
+    }
+  }
+
+  // Spawn robots and enemies based on tile types
+  for (let x = 0; x < length; x++) {
+    for (let y = 0; y < maxHeight; y++) {
+      for (let z = 0; z < width; z++) {
+        const tile = tilespawn[x][y][z];
+        const type = tile.getType();
+
+        const worldX = (x - mapHalfX) * TILE_SIZE_XZ + TILE_SIZE_XZ/2;
+        const worldZ = (z - mapHalfZ) * TILE_SIZE_XZ + TILE_SIZE_XZ/2;
+        const worldY = TILE_HEIGHT * (y -1);
+
+        const spawnPos =  getTileTopCenter(x, y, z);
+
+        switch (type) {
+          case "dogJockey":
+            spawnDogJockey(spawnPos);
+            console.log("DogJockey spawned at " + worldX + ", " + worldY + ", " + worldZ);
+
+            break;
+          case "turret":
+            spawnTurret(spawnPos);
+            console.log("Turret spawned at " + worldX + ", " + worldY + ", " + worldZ);
+
+            break;
+          case "vacuum":
+            await spawnVacuum(spawnPos);
+            console.log("Vacuum spawned at " + worldX + ", " + worldY + ", " + worldZ);
+
+            break;
+          case "android":
+            await spawnForklift(spawnPos);
+            console.log("Forklift spawned at " + worldX + ", " + worldY + ", " + worldZ);
+
+            break;
+          case "drone":
+            await spawnDrone(spawnPos);
+            console.log("Drone spawned at " + worldX + ", " + worldY + ", " + worldZ);
+            break;
+          case "dog":
+            spawnDog(spawnPos);
+            console.log("Dog spawned at " + worldX + ", " + worldY + ", " + worldZ);
+            break;
+          case "goo" :
+            spawnGoo(spawnPos);
+            console.log("Goo spawned at " + worldX + ", " + worldY + ", " + worldZ);
+            break;
+          case "goal" :
+            spawnEndLevelTerminal(spawnPos);
+            console.log("JAMES: EndLevelTerminal spawned at goal", spawnPos);
+            break;
+          default:
+            break;
         }
       }
     }
@@ -127,6 +198,11 @@ export function spawnDog(positionVec3) {
   entityManagerInstance.addEntity(dog);
   return dog;
 }
+export function spawnGoo(positionVec3)
+{const go =createGoo(positionVec3);
+  entityManagerInstance.addEntity(go);
+  return go;
+}
 
 export function findNearestTile(worldPos) {
   let gridX = Math.round(worldPos.x / TILE_SIZE_XZ + mapHalfX);
@@ -137,7 +213,11 @@ export function findNearestTile(worldPos) {
   return { x: gridX, z: gridZ };
 }
 
-const TILE_HEIGHT =TILE_SIZE_XZ-5;
+export function updateLevelTiles(delta) {
+  tileManager.update(delta);
+}
+
+// NOTE TO JAMES: I defined TILE_HEIGHT as a static class variable for use in the robot spawning code. -Steven
 export function getTileCenter(gridX, gridZ, storyLevel) {
   // JAMES: Find the story index below the impact level
   const belowStory = storyLevel - 1;
@@ -159,6 +239,43 @@ export function getTileCenter(gridX, gridZ, storyLevel) {
   return new THREE.Vector3(worldX, worldY, worldZ);
 }
 
-export function updateLevelTiles(delta) {
-  tileManager.update(delta);
+
+export function getTileTopCenter(gridX, gridZ, storyLevel) {
+  // world‑X/Z center of the tile
+  const halfXZ = TILE_SIZE_XZ * 0.5;
+  const worldX = (gridX - mapHalfX) * TILE_SIZE_XZ + halfXZ;
+  const worldZ = (gridZ - mapHalfZ) * TILE_SIZE_XZ + halfXZ;
+
+  // world‑Y at the top of that story
+  const worldY = storyLevel * TILE_HEIGHT;
+
+  return new THREE.Vector3(worldX, worldY, worldZ);
+}
+
+/**
+ * Scan the last‐generated tileArray for the 'start' tile
+ * and return its grid coordinates.
+ */
+export function getStartGrid() {
+  for (let x = 0; x < mapLength; x++) {
+    for (let y = 0; y < mapMaxHeight; y++) {
+      for (let z = 0; z < mapWidth; z++) {
+        if (mapTileArray[x][y][z].getType() === 'goal') {
+          return { x, y, z };
+        }
+      }
+    }
+  }
+  throw new Error("No start tile found");
+}
+
+export function getStartWorldPos() {
+  const { x, y, z } = getStartGrid();
+  
+  const halfXZ = TILE_SIZE_XZ * 0.5;
+  const worldX = (x - mapHalfX) * TILE_SIZE_XZ + halfXZ;
+  const worldZ = (z - mapHalfZ) * TILE_SIZE_XZ + halfXZ;
+  
+  const worldY = TILE_HEIGHT * (y - 1);
+  return new THREE.Vector3(worldX, worldY, worldZ);
 }

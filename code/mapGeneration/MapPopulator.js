@@ -99,7 +99,7 @@ export class MapPopulator
 	setTileAt(coord, tileType, tileFacing = 0)
 	{
 		const [x, y, z] = coord;
-		//console.log("Spawning",tileType,"at",x,y,z);
+		console.log("Spawning",tileType,"at",x,y,z);
 		this.tileArray[x][y][z] = new Tile(tileType, tileFacing);
 	}
 

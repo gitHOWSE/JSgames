@@ -155,9 +155,9 @@ export class Dog extends Entity {
     console.log(`//JAMES: Dog ${this.id} spawned at`, position);
 
     //JAMES: Initialize movement parameters
-    this.movement.maxForce = 20 * 1.5;        // acceleration factor 1.5×
+    this.movement.maxForce = 15;
     this.movement.topSpeed = 30;               // top speed 30 units/sec
-    this.movement.turningAccelerationFactor = 50; // turning acceleration
+    this.movement.turningAccelerationFactor = 30; // turning acceleration
 
     this.loader = new FBXLoader();
     this.mixers = [];

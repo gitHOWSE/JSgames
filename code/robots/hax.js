@@ -66,6 +66,10 @@ console.log(`//JAMES: Hack called by player ${playerEntity.id}, ${playerEntity.p
 //&& target.getArmor() <= 0
     //JAMES: For testing, using effectiveDistance < 100 ish.
     if (effectiveDistance < 6 ) {
+      if (typeof target.onHacked === "function") {
+                target.onHacked();
+                return;  
+              }
       playerEntity.lastHackTime = now;
       window.hackDisabledUntil = now + 3000;
       if (target.is_robot) {

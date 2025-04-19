@@ -2,6 +2,8 @@
 "use strict";
 
 import * as THREE from "three";
+import { spawnEndLevelTerminal } from "../robots/endLevelBot.js";
+
 import ThreeMeshUI from "three-mesh-ui";
 import { cameraManager } from "../Util/Camera.js";
 import { createVacuum } from "../robots/vacuum.js";
@@ -15,10 +17,10 @@ import { MapPopulator } from "../mapGeneration/MapPopulator.js";
 
 import { Navigation } from "../pathing/Navigation.js";
 
-import MapGenerator  from "../mapGeneration/MapGenerator.js" ;
+
 import { spawnTestAnimations } from "../robots/testAnimations.js";
 
-import { setupLevel, updateLevelTiles, findNearestTile } from "./levelSetup.js";
+import { setupLevel, updateLevelTiles, findNearestTile, getStartWorldPos } from "./levelSetup.js";
 import { Turret } from "../robots/turret.js";
 import { Entity } from "../entities/Entity.js";
 import entityManagerInstance from "../entities/EntityManager.js";
@@ -36,13 +38,22 @@ export let player = null;
  */
 export async function startLevelOne() {
   // JAMES: Set up the procedural level.
-  await setupLevel(1);
+  let ready = false;
+  while (!ready) {
+    try {await setupLevel(1);
+      ready = true;
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
   //let mapGen = new MapGenerator(1);
   //cameraManager.scene.add(mapGen.generateDebug());
+  const spawnPos = getStartWorldPos();
+    player = await createVacuum(spawnPos);
+  
 
-  player = await createVacuum(new THREE.Vector3(3, 0, 0));
-
-
+  /*
   let trt = new Turret({
     scene: cameraManager.scene,
     position: new THREE.Vector3(6, 0, 6)
@@ -56,7 +67,7 @@ export async function startLevelOne() {
   const tur = new Turret({ scene: cameraManager.scene, position: dogPos.clone(), host: dog });
   dog.attachTurret(tur);
   entityManagerInstance.addEntity(tur);
-
+  */
 
 
   const mixers = await spawnTestAnimations(cameraManager.scene);

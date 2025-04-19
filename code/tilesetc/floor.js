@@ -69,6 +69,35 @@ export default class Floor extends Entity {
       ent.updateBoundingBox();
       entBB.copy(ent.boundingBox);
 
+      // JAMES: If the entity cannot fly and its XZ bounds overlap this tile, snap it down to just above the tile's top surface.
+if (!ent.getFly() || !entBB.getMovable()) {
+  // project both bounding boxes into XZ
+  const entMin = entBB.min, entMax = entBB.max;
+  const floorMin = this.boundingBox.min, floorMax = this.boundingBox.max;
+
+  // JAMES: Check overlap on X and Z only.
+  const overlapXZ =
+    entMax.x > floorMin.x &&
+    entMin.x < floorMax.x &&
+    entMax.z > floorMin.z &&
+    entMin.z < floorMax.z;
+
+  if (overlapXZ) {
+    // JAMES: Compute the Y position at the top of this tile plus 0.2.
+    const snapY = this.boundingBox.max.y + 0.2;
+
+    // JAMES: Only change the entity's Y, leave X and Z intact.
+    ent.model.position.y = snapY;
+    ent.position.y = snapY;
+
+    // JAMES: Update its bounding box so no further collision is processed this frame.
+    ent.updateBoundingBox();
+
+    // JAMES: Skip the standard bounce logic for this entity this frame.
+    return;
+  }
+}
+
       //JAMES: Check for intersection between the entity and the floor.
       if (entBB.intersectsBox(this.boundingBox)) {
         //JAMES: Compute the overlapping region (penetration volume).

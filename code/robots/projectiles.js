@@ -32,7 +32,7 @@ export class Projectile extends Entity {
     this.age       = 0;
 
     // JAMES: Sphere radius = half‑diagonal of tile square.
-    this.damageRadius = TILE_SIZE_XZ/300000 ; // Math.SQRT1_2;
+    this.damageRadius = TILE_SIZE_XZ/3 ; // Math.SQRT1_2;
     // JAMES: Damage per entity.
     this.damageAmount = 35;
 
@@ -86,7 +86,7 @@ export class Projectile extends Entity {
     for (const e of entityManager.getEntities()) {
       if (e === this) continue;
       const d = pos.distanceTo(e.getWorldPosition(new THREE.Vector3()));
-      if (d < 0.5) {
+      if (d < 0.1) {
         this._explodeOnStory(tileManager.getTileAt(pos.x, pos.z));
         break;
       }

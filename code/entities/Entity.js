@@ -77,7 +77,8 @@ this.armor     = this.max_armor;              // JAMES: current armour.
     this.is_robot = false;
     this.is_stationary_electronic = false;
 
-    /* ---------- automatic lights ---------- */
+    //JAMES: Drone-Related
+    this.canFly = false;
 
   }
 
@@ -112,6 +113,16 @@ this.armor     = this.max_armor;              // JAMES: current armour.
     this.setTeam(next);
     return next;
   }
+
+disableHeadlights()
+{
+  this.headlight = null;
+}
+
+disableBulbLights()
+{
+  this.bulb = null;
+}
 
   //JAMES: Enables a SpotLight as headlights.
   enableHeadlights(color = 0xffffff, intensity = 100, distance = 2000) {
@@ -170,6 +181,7 @@ this.armor     = this.max_armor;              // JAMES: current armour.
     if (this === window.player && window.controller && !this.getCollided()) {
       this.movement.updateFromInput(window.controller, this, delta);
       this.movement.updateAngular(delta);
+      //console.log("Player position:", this.position);
 
       //JAMES: Rotate the whole model
       this.model.rotateY(this.movement.angularVelocity * delta);
@@ -261,6 +273,13 @@ this.armor     = this.max_armor;              // JAMES: current armour.
     return other.getTeam && other.getTeam() === this.getTeam();
   }
 
+  getFly()
+  {
+    return this.canFly;
+  }
+  setFly(t = true) {
+    this.canFly = !!t;
+  }
   getId() {
     return this.id;
   }
