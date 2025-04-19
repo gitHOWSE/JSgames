@@ -66,7 +66,19 @@ export class Navigation
 	// valid type values: 'ramp', 'stair', 'cliff'
 	getNodeAt(x,z,type)
 	{
-		return this.mapGraphs[type].get(this.mapGraphs[type].getIndexFromCoords(x,z));
+		const graph = this.mapGraphs[type];
+		if (!graph) 
+		{
+			console.error(`[Navigation] No mapGraph for type: ${type}`);
+			return undefined;
+		}
+		const index = graph.getIndexFromCoords(x, z);
+		const node = graph.get(index);
+		if (!node) 
+		{
+			console.warn(`[Navigation] No node found at (${x}, ${z}) [index ${index}] in type ${type}`);
+		}
+		return node;
 	}
 
 	// Takes bools canStair and canFly and converts them to a string key for navigation Maps
@@ -114,13 +126,17 @@ export class Navigation
 		return this.mapGraphs[type];
 	}
 
+	// Takes goal x and z, then your x and z, as well as optional args for movement ability
+	// Returns a Vector3 in the direction you should go to get there.
+	// NOTES: coords are in tilespace, not worldspace, also, call this every time you change
+	//        position in tilespace, as vectors will change each tile.
 	getDirection(x, z, myX, myZ, canStair = false, canFly = false)
 	{
 		// Goal DNE or unreachable
-		if ((x < 0 || z < 0 || x > this.length || z > this.width)
+		if ((x < 0 || z < 0 || x >= this.length || z >= this.width)
 			|| this.tileArray[x][this.getTopTile(x,z)][z].getType() === 'wall')
 		{
-			console.log("[Navigation] getDirection() -> target unreachable");
+			console.warn("[Navigation] getDirection() -> target unreachable");
 			return new THREE.Vector3();
 		}
 
@@ -131,5 +147,103 @@ export class Navigation
 		const keys = [...this.vectorFields[type].get(key).keys()];
 		//console.log("[Navigation] seeking vector from",myX,myZ,"to",x,z,"result:",vector);
 		return vector;
+	}
+
+	// Returns a random point (in tilespace) that is accessible based on input position and args
+	getRandomReachablePoint(myX, myZ, canStair = false, canFly = false)
+	{
+		const type = this.getTypeFromCanVars(canStair, canFly);
+
+		let mapGraph = this.getMapGraph(canStair, canFly);
+		const goal = this.getNodeAt(myX, myZ, type);
+		mapGraph.setupVectorField([goal], true);
+		const vf = mapGraph.vectorField;
+
+		const zero = new THREE.Vector3(0, 0, 0);
+		const filteredVF = Array.from(vf.entries()).filter(([key,vec]) => !vec.equals(zero));
+
+		if (filteredVF.length > 0)
+		{
+			const randIndex = Math.floor(Math.random() * filteredVF.length);
+			const [randomKey, randomVec] = filteredVF[randIndex];
+			const coords = mapGraph.getCoordsFromIndex(randomKey);
+			return coords;
+		}
+		else
+		{
+			console.log("No non-zero vectors found.");
+		}
+	}
+
+	snapDirection(vec)
+	{
+  		const snapped = new THREE.Vector3(
+    		Math.round(vec.x),
+    		Math.round(vec.y),
+    		Math.round(vec.z)
+  		);
+
+  		// Avoid dividing by zero
+  		if (snapped.lengthSq() === 0) 
+  		{
+    		return new THREE.Vector3(0, 0, 0); // Or throw an error if needed
+  		}
+
+  		return snapped.normalize();
+	}
+
+	// Returns an array of (x, z) coordinate pairs corresponding to a path to follow to x, z
+	getPath(x, z, myX, myZ, canStair = false, canFly = false)
+	{
+		// consts used for comparison to determine direction
+		const NORTH = new THREE.Vector3( 0,  0, -1);
+		const EAST  = new THREE.Vector3( 1,  0,  0);
+		const SOUTH = new THREE.Vector3( 0,  0,  1);
+		const WEST  = new THREE.Vector3(-1,  0,  0);
+		const ZERO  = new THREE.Vector3( 0,  0,  0);
+
+		const type = this.getTypeFromCanVars(canStair, canFly);
+		const goal = this.getNodeAt(x, z, type);
+
+		let current = this.getNodeAt(myX, myZ, type);
+		let path = [];
+
+		//console.log("[Navigation] getting path from",myX,myZ,"to",x,z);
+		while (current !== goal)
+		{
+			//console.log("[Navigation] adding point",current.x,current.z,"to path.");
+			path.push([current.x, current.z]);
+
+			let dir = this.getDirection(x, z, current.x, current.z, canStair, canFly);
+			dir = this.snapDirection(dir); // accounts for floating point errors
+
+			if (dir.equals(NORTH))
+			{
+				current = this.getNodeAt(current.x, current.z - 1, type);
+			}
+			else if (dir.equals(EAST))
+			{
+				current = this.getNodeAt(current.x + 1, current.z, type);
+			}
+			else if (dir.equals(SOUTH))
+			{
+				current = this.getNodeAt(current.x, current.z + 1, type);
+			}
+			else if (dir.equals(WEST))
+			{
+				current = this.getNodeAt(current.x - 1, current.z, type);
+			}
+			else if (dir.equals(ZERO))
+			{
+				console.warn("[Navigation] Pathfinding failed; zero vector");
+				return path;
+			}
+			else console.error("[Navigation] Pathfinding error: illegal vector direction");
+		}
+
+		path.push([goal.x, goal.z]);
+
+		//console.log("[Navigation] path found, final coord:",current.x, current.z);
+		return path;
 	}
 }
