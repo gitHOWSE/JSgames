@@ -172,6 +172,14 @@ export class MapGraph {
   }
 
 
+  getCoordsFromIndex(index)
+  {
+    const x = Math.floor(index / this.tileArray[0][0].length);
+    const z = index % this.tileArray[0][0].length;
+    return { x, z };
+  }
+
+
   getGoals()
   {
     let goals = [];
@@ -190,7 +198,7 @@ export class MapGraph {
 
   // Takes an array of start nodes and returns a map of nodes and their costs to reach the
   // nearest goal.
-  multiGoalDijkstra(goals) {
+  multiGoalDijkstra(goals, useEdgesIn = true) {
     // Initialise Dijkstra costs map and minheap
     let costs = new Map();
     let heap = new MinHeap();
@@ -206,7 +214,8 @@ export class MapGraph {
       const { cost: currentCost, node: currentNode } = heap.dequeue();
 
       if (currentCost <= costs.get(currentNode)) {
-        for (let edge of currentNode.edgesIn) {
+        const edgeList = useEdgesIn ? currentNode.edgesIn : currentNode.edges;
+        for (let edge of edgeList) {
           let neighbour = edge.node;
           let edgeCost = edge.cost;
           let totalCost = currentCost + edgeCost;
@@ -222,48 +231,12 @@ export class MapGraph {
 
     return costs;
   }
-
-
-  // Takes a set of """"goals"""" and finds the costs to get from them, rather than to
-  reverseDijkstra(goals) {
-    // Initialise Dijkstra costs map and minheap
-    let costs = new Map();
-    let heap = new MinHeap();
-
-    // Add goal nodes to map and heap
-    goals.forEach((element) => {
-      costs.set(element, 0);
-      heap.enqueue({cost: 0, node: element});
-    });
-
-    // Propagate out from goals until all accessible nodes have been visited
-    while (!heap.isEmpty()) {
-      const { cost: currentCost, node: currentNode } = heap.dequeue();
-
-      if (currentCost <= costs.get(currentNode)) {
-        for (let edge of currentNode.edges) {
-          let neighbour = edge.node;
-          let edgeCost = edge.cost;
-          let totalCost = currentCost + edgeCost;
-
-          // Update map and heap if an unexplored or cheaper path is found
-          if (costs.get(neighbour) === undefined || totalCost < costs.get(neighbour)) {
-            costs.set(neighbour, totalCost);
-            heap.enqueue({ cost: totalCost, node: neighbour });
-          }
-        }
-      }
-    }
-
-    return costs;
-  }
-
 
   // Takes an array containing the goal nodes and returns a vector field
   setupVectorField(goals, reverse = false) {
     // Get costs map
     let costs = null;
-    if (reverse) costs = this.reverseDijkstra(goals);
+    if (reverse) costs = this.multiGoalDijkstra(goals, false);
     else         costs = this.multiGoalDijkstra(goals);
 
     for (const node of this.nodes) {

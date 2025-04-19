@@ -88,7 +88,8 @@ export default class MapGenerator
 				this.tileArray[x][y] = [];
 				for (let z = 0; z < this.width; z++)
 				{
-					this.tileArray[x][y][z] = new Tile('wall');
+					const facing = Math.floor(Math.random()*4);
+					this.tileArray[x][y][z] = new Tile('wall',facing);
 				}
 			}
 		}
@@ -247,7 +248,8 @@ export default class MapGenerator
 					let currentTile = this.tileArray[x][y][z];
 					if (currentTile.getType() === "air")
 					{
-						const tile = new Tile('floor');
+						const facing = Math.floor(Math.random()*4);
+						const tile = new Tile('floor', facing);
 						this.tileArray[x][y][z] = tile;
 					}
 				}
