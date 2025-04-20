@@ -1,0 +1,67 @@
+ ___________________________________
+| 				     |
+|           File - contributions.txt |
+|         Course - COMP 4303         |
+|____________________________________|
+|				     |
+|          GROUP MEMBERS             |
+|    James Howse - Steven Sproule    |
+|  jhowse@mun.ca - sasproule@mun.ca  |
+|      ????????? - 201918430         |
+|____________________________________|
+
+ ______________________________________________________________________________
+| DESCRIPTION								       |
+|______________________________________________________________________________|
+| This document records the contributions of each member of the team on the    |
+| final project for COMP 4303 in the winter semester of 2025.		       |
+|______________________________________________________________________________|
+
+ ______________________________________________________________________________
+| BOTH									       |
+|______________________________________________________________________________|
+| Game Concept								       |
+| Enemy Design								       |
+| Entity System								       |
+|______________________________________________________________________________|
+ ______________________________________________________________________________
+| JAMES HOWSE								       |
+|______________________________________________________________________________|
+| Entity System:							       |
+|   - Partial-implementation and extensive redesign of EntityManager system.   |
+|   - Design and implementation of Entity update system.		       |
+| Assets & UI:								       |
+|   - Design and implementation of entire UI.				       |
+|     - UI design & logic.						       |
+|   - Design and creation of all graphical assets, including:		       |
+|     - All level tiles (floors, walls, ramps, etc.).			       |
+|     - All robot models (ROAMba, dogbot, android, etc.).		       |
+|     - All animations for robots.					       |
+| AI:									       |
+|  - Design and implementation of State Machine for governing AI behaviours:   |
+|    - Guard -> Alert -> Attack -> Player -> Stunned.			       |
+|  - Design and implementation of AI behaviours:			       |
+|    - Wander.								       |
+|    - Flocking.							       |
+|    - Seek (attack).							       |
+|    - Path Following (using Navigation.js).				       |
+| Physics and Collision Handling:					       |
+|  - Design and implementation of collision system.			       |
+|______________________________________________________________________________|
+ ______________________________________________________________________________
+| STEVEN SPROULE							       |
+|______________________________________________________________________________|
+| Entity System:							       |
+|   - Design and partial-implementation of EntityManager system.	       |
+| Pathfinding:								       |
+|   - Design and implementation of vector-field and path-following systems:    |
+|     - Navigation.js - suite of navigational tools to assist in AI pathing.   |
+|     - MapGraph.js   - modified extensively from assignment.                  |
+| Procedural Generation:						       |
+|   - Design and implementation of entire level generation system, including:  |
+|     - MapParams.js      - stores parameters for modifying level generation.  |
+|     - MapGenerator.js   - creates level geometry using DFS, Perlin, and more.|
+|     - NoiseGenerator.js - helper class to provide Perlin noise.              |
+|     - MapPopulator.js   - adds entity spawns to generated level.             |
+|   - Design and implementation of MapGraph-based level analysis system.       |
+|______________________________________________________________________________|
