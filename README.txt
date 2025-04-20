@@ -24,7 +24,7 @@
 | 1. Open a terminal in the /code/ folder (contains index.html).               |
 | 2. Run 'npm install three'.						       |
 | 3. Run 'npm install three-mesh-ui'.					       |
-| 4. Run npx vite.							       |
+| 4. Run 'npx vite' from inside the /code/ directory.			       |
 | 5. Connect to the address shown on the terminal (default: localhost:5173).   |
 |______________________________________________________________________________|
 
@@ -80,17 +80,6 @@
 | maps yourself to see the results! The parameters are readily accessible in   |
 | the file /code/mapGeneration/MapParams.js if you want to see how it responds |
 | to different settings (which it was built to handle).			       |
-|______________________________________________________________________________|
-
- ______________________________________________________________________________
-| HOW TO RUN DEBUG VISUALS						       |
-|______________________________________________________________________________|
-| 1. Open /???								       |
-| 2. Go to line ??? and change the value of const DEBUG to true.               |
-| 3. Start the game as before (See: HOW TO PLAY THE GAME).		       |
-| 4. Instead of the game, a debug render of the map generation, with a vector  |
-|    field to the map's goal, will be displayed. The same controls as in-game  |
-|    can be used to move and view different				       |
 |______________________________________________________________________________|
 
  ______________________________________________________________________________
